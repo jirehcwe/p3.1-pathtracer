@@ -1,5 +1,9 @@
 #include "camera.h"
 
+#include <iostream>
+#include <sstream>
+#include <fstream>
+
 #include "CGL/misc.h"
 #include "CGL/vector3D.h"
 
@@ -7,6 +11,8 @@ using std::cout;
 using std::endl;
 using std::max;
 using std::min;
+using std::ifstream;
+using std::ofstream;
 
 namespace CGL {
 
@@ -107,6 +113,37 @@ void Camera::compute_position() {
                                  // directly using dirToCamera as
                                  // column 2 of the matrix takes [0 0 -1]
                                  // to the world space view direction
+}
+
+void Camera::dump_settings(string filename) {
+  ofstream file(filename);
+  file << hFov << " " << vFov << " " << ar << " " << nClip << " " << fClip << endl;
+  for (int i = 0; i < 3; ++i)
+    file << pos[i] << " ";
+  for (int i = 0; i < 3; ++i)
+    file << targetPos[i] << " ";
+  file << endl;
+  file << phi << " " << theta << " " << r << " " << minR << " " << maxR << endl;
+  for (int i = 0; i < 9; ++i)
+    file << c2w(i/3, i%3) << " ";
+  file << endl;
+  file << screenW << " " << screenH << " " << screenDist << endl;
+  cout << "[Camera] Dumped settings to " << filename << endl;
+}
+
+void Camera::load_settings(string filename) {
+  ifstream file(filename);
+
+  file >> hFov >> vFov >> ar >> nClip >> fClip;
+  for (int i = 0; i < 3; ++i)
+    file >> pos[i];
+  for (int i = 0; i < 3; ++i)
+    file >> targetPos[i];
+  file >> phi >> theta >> r >> minR >> maxR;
+  for (int i = 0; i < 9; ++i)
+    file >> c2w(i/3, i%3);
+  file >> screenW >> screenH >> screenDist;
+  cout << "[Camera] Loaded settings from " << filename << endl;
 }
 
 Ray Camera::generate_ray(double x, double y) const {

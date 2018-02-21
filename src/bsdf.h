@@ -112,7 +112,7 @@ class BSDF {
 class DiffuseBSDF : public BSDF {
  public:
 
-  DiffuseBSDF(const Spectrum& a) : albedo(a) { }
+  DiffuseBSDF(const Spectrum& a) : reflectance(a) { }
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
@@ -121,7 +121,7 @@ class DiffuseBSDF : public BSDF {
 
 private:
 
-  Spectrum albedo;
+  Spectrum reflectance;
   CosineWeightedHemisphereSampler3D sampler;
 
 }; // class DiffuseBSDF
@@ -144,17 +144,17 @@ private:
   float roughness;
   Spectrum reflectance;
 
-}; // class MirrorBSDF*/
+}; // class MirrorBSDF
 
 /**
  * Glossy BSDF.
  */
-/*
+
 class GlossyBSDF : public BSDF {
  public:
 
-  GlossyBSDF(const Spectrum& reflectance, float roughness)
-    : reflectance(reflectance), roughness(roughness) { }
+  GlossyBSDF(const Spectrum& reflectance, float shininess)
+    : reflectance(reflectance), shininess(shininess) { }
 
   Spectrum f(const Vector3D& wo, const Vector3D& wi);
   Spectrum sample_f(const Vector3D& wo, Vector3D* wi, float* pdf);
@@ -163,10 +163,11 @@ class GlossyBSDF : public BSDF {
 
 private:
 
-  float roughness;
+  float shininess;
   Spectrum reflectance;
+  CosineWeightedHemisphereSampler3D sampler;
 
-}; // class GlossyBSDF*/
+}; // class GlossyBSDF
 
 /**
  * Refraction BSDF.
