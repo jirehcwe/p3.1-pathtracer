@@ -32,6 +32,7 @@ PathTracer::PathTracer(size_t ns_aa,
                        size_t samples_per_batch,
                        float max_tolerance,
                        HDRImageBuffer* envmap,
+                       bool direct_hemisphere_sample,
                        string filename) {
   state = INIT,
   this->ns_aa = ns_aa;
@@ -42,9 +43,8 @@ PathTracer::PathTracer(size_t ns_aa,
   this->ns_refr = ns_refr;
   this->samplesPerBatch = samples_per_batch;
   this->maxTolerance = max_tolerance;
+  this->direct_hemisphere_sample = direct_hemisphere_sample;
   this->filename = filename;
-
-  this->direct_hemisphere_sample = false;
 
   if (envmap) {
     this->envLight = new EnvironmentLight(envmap);
@@ -123,6 +123,10 @@ void PathTracer::set_frame_size(size_t width, size_t height) {
   }
   sampleBuffer.resize(width, height);
   frameBuffer.resize(width, height);
+  cell_tl = Vector2D(0,0); 
+  cell_br = Vector2D(width, height);
+  render_cell = false;
+  sampleCountBuffer.resize(width * height);
   if (has_valid_configuration()) {
     state = READY;
   }
@@ -240,8 +244,8 @@ void PathTracer::start_raytracing() {
     // populate the tile work queue
     for (size_t y = cell_tl.y; y < cell_br.y; y += imTS) {
       for (size_t x = cell_tl.x; x < cell_br.x; x += imTS) {
-          workQueue.put_work(WorkItem(x, y, 
-            min(imTS, (int)(cell_br.x-x)), min(imTS, (int)(cell_br.y-y)) ));
+        workQueue.put_work(WorkItem(x, y, 
+          min(imTS, (int)(cell_br.x-x)), min(imTS, (int)(cell_br.y-y)) ));
       }
     }
   }
@@ -579,7 +583,7 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
   // performing Russian roulette step, and returning a recursively 
   // traced ray (when applicable) goes
 
-  return Spectrum();
+  return L_out;
 
 }
 

@@ -7,6 +7,7 @@
 #include "CGL/matrix3x3.h"
 
 #include "sampler.h"
+#include "image.h"
 
 #include <algorithm>
 
@@ -104,6 +105,9 @@ class BSDF {
    */
   virtual bool refract(const Vector3D& wo, Vector3D* wi, float ior);
 
+  const HDRImageBuffer* reflectanceMap;
+  const HDRImageBuffer* normalMap;
+
 }; // class BSDF
 
 /**
@@ -144,7 +148,7 @@ private:
   float roughness;
   Spectrum reflectance;
 
-}; // class MirrorBSDF
+}; // class MirrorBSDF*/
 
 /**
  * Glossy BSDF.

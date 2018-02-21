@@ -67,6 +67,7 @@ class PathTracer {
              size_t samples_per_batch = 32,
              float max_tolerance = 0.05f,
              HDRImageBuffer* envmap = NULL,
+             bool direct_hemisphere_sample = false,
              string filename = "");
 
   /**

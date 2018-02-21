@@ -31,6 +31,7 @@ Application::Application(AppConfig config, bool gl) {
     config.pathtracer_samples_per_patch,
     config.pathtracer_max_tolerance,
     config.pathtracer_envmap,
+    config.pathtracer_direct_hemisphere_sample,
     config.pathtracer_filename
   );
   filename = config.pathtracer_filename;
@@ -433,6 +434,9 @@ void Application::keyboard_event(int key, int event, unsigned char mods) {
             pathtracer->stop();
             pathtracer->key_press(key);
             pathtracer->start_raytracing();
+            break;
+          case 'C': 
+            pathtracer->key_press(key);
             break;
           case 'r': case 'R':
             pathtracer->stop();

@@ -55,6 +55,7 @@ struct AppConfig {
 
     pathtracer_samples_per_patch = 32;
     pathtracer_max_tolerance = 0.05f;
+    pathtracer_direct_hemisphere_sample = false;
 
     pathtracer_filename = "";
   }
@@ -72,6 +73,8 @@ struct AppConfig {
 
   float pathtracer_max_tolerance;
   size_t pathtracer_samples_per_patch;
+
+  bool pathtracer_direct_hemisphere_sample;
 
   string pathtracer_filename;
 };
