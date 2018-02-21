@@ -31,7 +31,6 @@ PathTracer::PathTracer(size_t ns_aa,
                        size_t num_threads,
                        size_t samples_per_batch,
                        float max_tolerance,
-                       bool direct_hemisphere_sample,
                        HDRImageBuffer* envmap,
                        string filename) {
   state = INIT,
@@ -711,7 +710,6 @@ void PathTracer::worker_thread() {
     fprintf(stdout, "\r[PathTracer] Rendering... 100%%! (%.4fs)\n", timer.duration());
     fprintf(stdout, "[PathTracer] BVH traced %llu rays.\n", bvh->total_rays);
     fprintf(stdout, "[PathTracer] Averaged %f intersection tests per ray.\n", (((double)bvh->total_isects)/bvh->total_rays));
-    fprintf(stdout, "[PathTracer] Averaged %f bounces per ray.\n", (((double)bounces)/rays));
 
     lock_guard<std::mutex> lk(m_done);
     state = DONE;

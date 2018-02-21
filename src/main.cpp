@@ -76,7 +76,7 @@ int main( int argc, char** argv ) {
   AppConfig config; int opt;
   bool write_to_file = false;
   size_t w = 0, h = 0, x = -1, y = 0, dx = 0, dy = 0;
-  string filename;
+  string filename, cam_settings = "";
   while ( (opt = getopt(argc, argv, "s:l:t:m:e:h:f:r:c:a:p:")) != -1 ) {  // for each option...
     switch ( opt ) {
       case 'f':

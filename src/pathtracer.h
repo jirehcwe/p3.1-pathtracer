@@ -66,8 +66,8 @@ class PathTracer {
              size_t num_threads = 1,
              size_t samples_per_batch = 32,
              float max_tolerance = 0.05f,
-             bool direct_hemisphere_sample = false,
-             HDRImageBuffer* envmap = NULL);
+             HDRImageBuffer* envmap = NULL,
+             string filename = "");
 
   /**
    * Destructor.
