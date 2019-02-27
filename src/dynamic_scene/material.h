@@ -29,9 +29,27 @@ class Material {
 
   void set_material_properties() const {
     glBindTexture(GL_TEXTURE_2D, 0);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, &ambient.r);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, &diffuse.r);
-    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, &specular.r);
+
+    GLfloat temp[4];
+
+    temp[0] = ambient.r;
+    temp[1] = ambient.b;
+    temp[2] = ambient.g;
+    temp[3] = 1.f;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT, temp);
+
+    temp[0] = diffuse.r;
+    temp[1] = diffuse.b;
+    temp[2] = diffuse.g;
+    temp[3] = 1.f;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_DIFFUSE, temp);
+
+    temp[0] = specular.r;
+    temp[1] = specular.b;
+    temp[2] = specular.g;
+    temp[3] = 1.f;
+    glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, temp);
+
     glMateriali(GL_FRONT_AND_BACK, GL_SHININESS, shininess);
   }
 

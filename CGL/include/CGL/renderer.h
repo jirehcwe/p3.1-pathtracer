@@ -118,7 +118,7 @@ class Renderer {
    * Internal -
    * The viewer will tell the renderer if the screen is in HDPI mode.
    */
-  void use_hdpi_reneder_target() { use_hdpi = true; }
+  void use_hdpi_render_target() { use_hdpi = true; }
 
  protected:
 

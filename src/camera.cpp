@@ -154,7 +154,9 @@ Ray Camera::generate_ray(double x, double y) const {
   // Note: hFov and vFov are in degrees.
   // 
 
+
   return Ray(Vector3D(), Vector3D());
+
 
 }
 

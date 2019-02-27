@@ -43,7 +43,7 @@ void Mesh::render_in_opengl() const {
   // DiffuseBSDF* diffuse = dynamic_cast<DiffuseBSDF*>(bsdf);
   // if (diffuse) {
   //   glBindTexture(GL_TEXTURE_2D, 0);
-  //   glMaterialfv(GL_FRONT, GL_DIFFUSE, &diffuse->albedo.r);
+  //   glMaterialfv(GL_FRONT, GL_DIFFUSE, diffuse->albedo.unsafe);
   // }
 
   // Enable lighting for faces

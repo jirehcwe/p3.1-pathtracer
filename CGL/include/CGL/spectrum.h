@@ -47,6 +47,17 @@ class Spectrum {
     return *this;
   }
 
+  inline Spectrum operator-(const Spectrum &rhs) const {
+    return Spectrum(r - rhs.r, g - rhs.g, b - rhs.b);
+  }
+
+  inline Spectrum &operator-=(const Spectrum &rhs) {
+    r -= rhs.r;
+    g -= rhs.g;
+    b -= rhs.b;
+    return *this;
+  }
+
   inline Spectrum operator*(const Spectrum &rhs) const {
     return Spectrum(r * rhs.r, g * rhs.g, b * rhs.b);
   }
@@ -66,6 +77,17 @@ class Spectrum {
     r *= s;
     g *= s;
     b *= s;
+    return *this;
+  }
+
+  inline Spectrum operator/(const Spectrum &rhs) const {
+    return Spectrum(r / rhs.r, g / rhs.g, b / rhs.b);
+  }
+
+  inline Spectrum &operator/=(const Spectrum &rhs) {
+    r /= rhs.r;
+    g /= rhs.g;
+    b /= rhs.b;
     return *this;
   }
 
@@ -89,15 +111,15 @@ class Spectrum {
   }
 
   inline Color toColor() const {
-    return Color(r, g, b, 1); 
+    return Color(r, g, b);
   }
 
-  inline float illum() const { 
+  inline float illum() const {
     return 0.2126f * r + 0.7152f * g + 0.0722f * b;
   }
 
   static Spectrum fromColor(const Color &c) {
-    return Spectrum(c.a * c.r, c.a * c.g, c.a * c.b);
+    return Spectrum(c.r, c.g, c.b);
   }
 
 

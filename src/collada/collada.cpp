@@ -46,7 +46,7 @@ inline Color color_from_string ( string color_string ) {
   ss >> c.r;
   ss >> c.g;
   ss >> c.b;
-  ss >> c.a;
+  //ss >> c.a;
 
   return c;
 

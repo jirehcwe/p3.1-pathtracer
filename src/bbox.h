@@ -132,7 +132,7 @@ struct BBox {
    * Draw box wireframe with OpenGL.
    * \param c color of the wireframe
    */
-  void draw(Color c) const;
+  void draw(Color c, float) const;
 };
 
 std::ostream& operator<<(std::ostream& os, const BBox& b);

@@ -29,14 +29,20 @@ namespace CGL { namespace Misc {
 static void init_mesh();
 static void draw_sphere(const Vector3D& p, double r);
 
+// Does not make use of alpha channel
 void draw_sphere_opengl(const Vector3D& p, double r, const Color& c) {
+  GLfloat temp[3];
+  temp[0] = c.r;
+  temp[1] = c.g;
+  temp[2] = c.b;
+
   if (glIsEnabled(GL_LIGHTING)) {
     glDisable(GL_LIGHTING);
-    glColor3fv(&c.r);
+    glColor3fv(temp);
     draw_sphere(p, r);
     glEnable(GL_LIGHTING);
   } else {
-    glColor3fv(&c.r);
+    glColor3fv(temp);
     draw_sphere(p, r);
   }
 }

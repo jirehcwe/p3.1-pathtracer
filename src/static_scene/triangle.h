@@ -64,12 +64,12 @@ namespace CGL { namespace StaticScene {
   /**
    * Draw with OpenGL (for visualizer)
    */
-  void draw(const Color& c) const;
+  void draw(const Color& c, float alpha) const;
 
   /**
    * Draw outline with OpenGL (for visualizer)
    */
-  void drawOutline(const Color& c) const;
+  void drawOutline(const Color& c, float alpha) const;
 
  private:
 

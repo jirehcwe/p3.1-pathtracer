@@ -66,7 +66,7 @@ void Viewer::init() {
   }
 
   // create window
-  string title = renderer ? "CGL: " + renderer->name() : "CGL";
+  string title = renderer ? "CS184: " + renderer->name() : "CS184";
   window = glfwCreateWindow( DEFAULT_W, DEFAULT_H, title.c_str(), NULL, NULL );
   if (!window) {
     out_err("Error: could not create window!");
@@ -111,7 +111,7 @@ void Viewer::init() {
 
   // initialize renderer if already set
   if (renderer){
-    if (HDPI) renderer->use_hdpi_reneder_target();
+    if (HDPI) renderer->use_hdpi_render_target();
     renderer->init();
   } 
 

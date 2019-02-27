@@ -43,6 +43,14 @@ set(APPLICATION_SOURCE
     main.cpp
 )
 
+# Windows-only sources
+if(WIN32)
+list(APPEND APPLICATION_SOURCE
+    # For get-opt
+    misc/getopt.c
+)
+endif(WIN32)
+
 #-------------------------------------------------------------------------------
 # Set include directories
 #-------------------------------------------------------------------------------

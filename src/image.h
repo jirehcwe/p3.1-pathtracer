@@ -6,12 +6,16 @@
 
 #include <vector>
 #include <string.h>
+#include <cassert>
 
 namespace CGL {
 
 /**
  * Image buffer which stores color space values with RGBA pixel layout using
- * 32 bit unsigned integers (8-bits per color channel).
+ * 32 bit unsigned integers (8-bits per color channel, high byte is padding).
+ * 
+ * Note that the alpha channel exists purely to make interfacing with
+ * OpenGL easier, and is assumed 1 everywhere.
  */
 struct ImageBuffer {
   /**
@@ -47,13 +51,13 @@ struct ImageBuffer {
    * \param y column of the pixel
    */
   void update_pixel(const Color& c, size_t x, size_t y) {
-    // assert(0 <= x && x < w);
-    // assert(0 <= y && y < h);
+    assert(0 <= x && x < w);
+    assert(0 <= y && y < h);
     uint32_t p = 0;
-    p += ((uint32_t) (clamp(0.f, 1.f, c.a) * 255)) << 24;
-    p += ((uint32_t) (clamp(0.f, 1.f, c.b) * 255)) << 16;
-    p += ((uint32_t) (clamp(0.f, 1.f, c.g) * 255)) << 8;
-    p += ((uint32_t) (clamp(0.f, 1.f, c.r) * 255));
+    p |= ((uint32_t) (clamp(0.f, 1.f, c.b) * 255)) << 16;
+    p |= ((uint32_t) (clamp(0.f, 1.f, c.g) * 255)) << 8;
+    p |= ((uint32_t) (clamp(0.f, 1.f, c.r) * 255));
+    p |= 0xFF000000;
     data[x + y * w] = p;
   }
 
@@ -65,7 +69,12 @@ struct ImageBuffer {
   /**
    * Clear image data.
    */
-  void clear() { memset(&data[0], 0, w * h * sizeof(uint32_t)); }
+  void clear() {
+    uint32_t clear_val = 0xFF000000; // Black with full alpha
+    for (size_t i = 0; i < w * h; ++i) {
+		data[i] = clear_val;
+	}
+  }
 
   size_t w; ///< width
   size_t h; ///< height
@@ -163,7 +172,7 @@ struct HDRImageBuffer {
         float r = pow(s.r * exposure, one_over_gamma);
         float g = pow(s.g * exposure, one_over_gamma);
         float b = pow(s.b * exposure, one_over_gamma);
-        target.update_pixel(Color(r, g, b, 1.0), x, y);
+        target.update_pixel(Color(r, g, b), x, y);
       }
     }
   }
@@ -183,7 +192,7 @@ struct HDRImageBuffer {
         float r = pow(s.r * exposure, one_over_gamma);
         float g = pow(s.g * exposure, one_over_gamma);
         float b = pow(s.b * exposure, one_over_gamma);
-        target.update_pixel(Color(r, g, b, 1.0), x, y);
+        target.update_pixel(Color(r, g, b), x, y);
       }
     }
   }

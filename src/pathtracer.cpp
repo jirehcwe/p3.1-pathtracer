@@ -312,13 +312,13 @@ void PathTracer::visualize_accel() const {
   glEnable(GL_DEPTH_TEST);
 
   // hardcoded color settings
-  Color cnode = Color(.5, .5, .5, .25);
-  Color cnode_hl = Color(1., .25, .0, .6);
-  Color cnode_hl_child = Color(1., 1., 1., .6);
+  Color cnode = Color(.5, .5, .5); float cnode_alpha = 0.25f;
+  Color cnode_hl = Color(1., .25, .0); float cnode_hl_alpha = 0.6f;
+  Color cnode_hl_child = Color(1., 1., 1.); float cnode_hl_child_alpha = 0.6f;
 
-  Color cprim_hl_left = Color(.6, .6, 1., 1);
-  Color cprim_hl_right = Color(.8, .8, 1., 1);
-  Color cprim_hl_edges = Color(0., 0., 0., 0.5);
+  Color cprim_hl_left = Color(.6, .6, 1.); float cprim_hl_left_alpha = 1.f;
+  Color cprim_hl_right = Color(.8, .8, 1.); float cprim_hl_right_alpha = 1.f;
+  Color cprim_hl_edges = Color(0., 0., 0.); float cprim_hl_edges_alpha = 0.5f;
 
   BVHNode *selected = selectionHistory.top();
 
@@ -327,16 +327,16 @@ void PathTracer::visualize_accel() const {
   glEnable(GL_POLYGON_OFFSET_FILL);
 
   if (selected->isLeaf()) {
-    bvh->draw(selected, cprim_hl_left);
+    bvh->draw(selected, cprim_hl_left, cprim_hl_left_alpha);
   } else {
-    bvh->draw(selected->l, cprim_hl_left);
-    bvh->draw(selected->r, cprim_hl_right);
+    bvh->draw(selected->l, cprim_hl_left, cprim_hl_left_alpha);
+    bvh->draw(selected->r, cprim_hl_right, cprim_hl_right_alpha);
   }
 
   glDisable(GL_POLYGON_OFFSET_FILL);
 
   // draw geometry outline
-  bvh->drawOutline(selected, cprim_hl_edges);
+  bvh->drawOutline(selected, cprim_hl_edges, cprim_hl_edges_alpha);
 
   // keep depth buffer check enabled so that mesh occluded bboxes, but
   // disable depth write so that bboxes don't occlude each other.
@@ -354,17 +354,17 @@ void PathTracer::visualize_accel() const {
     BVHNode *current = tstack.top();
     tstack.pop();
 
-    current->bb.draw(cnode);
+    current->bb.draw(cnode, cnode_alpha);
     if (current->l) tstack.push(current->l);
     if (current->r) tstack.push(current->r);
   }
 
   // draw selected node bbox and primitives
-  if (selected->l) selected->l->bb.draw(cnode_hl_child);
-  if (selected->r) selected->r->bb.draw(cnode_hl_child);
+  if (selected->l) selected->l->bb.draw(cnode_hl_child, cnode_hl_child_alpha);
+  if (selected->r) selected->r->bb.draw(cnode_hl_child, cnode_hl_child_alpha);
 
   glLineWidth(3.f);
-  selected->bb.draw(cnode_hl);
+  selected->bb.draw(cnode_hl, cnode_hl_alpha);
 
   // now perform visualization of the rays
   if (show_rays) {
@@ -521,10 +521,14 @@ Spectrum PathTracer::estimate_direct_lighting_hemisphere(const Ray& r, const Int
   int num_samples = scene->lights.size() * ns_area_light;
   Spectrum L_out;
 
-  // TODO (Part 3): Write your sampling loop here
+  // TODO (Part 3.2): 
+  // Write your sampling loop here
   // COMMENT OUT `normal_shading` IN `est_radiance_global_illumination` BEFORE YOU BEGIN
+  
 
   return L_out;
+
+
 }
 
 Spectrum PathTracer::estimate_direct_lighting_importance(const Ray& r, const Intersection& isect) {
@@ -543,29 +547,37 @@ Spectrum PathTracer::estimate_direct_lighting_importance(const Ray& r, const Int
   const Vector3D& w_out = w2o * (-r.d);
   Spectrum L_out;
 
-  // TODO (Part 3): Here is where your code for looping over scene lights goes
+  // TODO (Part 3.2): 
+  // Here is where your code for looping over scene lights goes
   // COMMENT OUT `normal_shading` IN `est_radiance_global_illumination` BEFORE YOU BEGIN
 
+
   return L_out;
+
+
 }
 
-
-
-
 Spectrum PathTracer::zero_bounce_radiance(const Ray&r, const Intersection& isect) {
-  // TODO: Part 4, Task 2
+
+  // TODO (Part 4.2):
   // Returns the light that results from no bounces of light
 
+  
   return Spectrum();
+
+
 }
 
 Spectrum PathTracer::one_bounce_radiance(const Ray&r, const Intersection& isect) {
-  // TODO: Part 4, Task 2
+  
+  // TODO (Part 4.2):
   // Returns either the direct illumination by hemisphere or importance sampling
   // depending on `direct_hemisphere_sample`
   // (you implemented these functions in Part 3)
 
+  
   return Spectrum();
+
   
 }
 
@@ -579,11 +591,13 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
 
   Spectrum L_out = one_bounce_radiance(r, isect);
 
-  // TODO (Part 4.2): Here is where your code for sampling the BSDF,
+  // TODO (Part 4.2): 
+  // Here is where your code for sampling the BSDF,
   // performing Russian roulette step, and returning a recursively 
   // traced ray (when applicable) goes
 
   return L_out;
+  
 
 }
 
@@ -626,7 +640,10 @@ Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
   int num_samples = ns_aa;            // total samples to evaluate
   Vector2D origin = Vector2D(x,y);    // bottom left corner of the pixel
 
+
+  sampleCountBuffer[x + y * frameBuffer.w] = num_samples;
   return Spectrum();
+
 
 }
 
@@ -747,10 +764,16 @@ void PathTracer::save_image(string filename, ImageBuffer* buffer) {
   for(size_t i = 0; i < h; ++i) {
     memcpy(frame_out + i * w, frame + (h - i - 1) * w, 4 * w);
   }
+  
+  for (size_t i = 0; i < w * h; ++i) {
+    frame_out[i] |= 0xFF000000;
+  }
 
   fprintf(stderr, "[PathTracer] Saving to file: %s... ", filename.c_str());
   lodepng::encode(filename, (unsigned char*) frame_out, w, h);
   fprintf(stderr, "Done!\n");
+  
+  delete[] frame_out;
 
   save_sampling_rate_image(filename);
 }
@@ -775,8 +798,17 @@ void PathTracer::save_sampling_rate_image(string filename) {
           outputBuffer.update_pixel(c, x, h - 1 - y);
       }
   }
+  uint32_t* frame_out = new uint32_t[w * h];
+  
+  for (size_t i = 0; i < w * h; ++i) {
+    uint32_t out_color_hex = 0;
+    frame_out[i] = outputBuffer.data.data()[i];
+    frame_out[i] |= 0xFF000000;
+  }
 
-  lodepng::encode(filename.substr(0,filename.size()-4) + "_rate.png", (unsigned char*) (outputBuffer.data.data()), w, h);
+  lodepng::encode(filename.substr(0,filename.size()-4) + "_rate.png", (unsigned char*) frame_out, w, h);
+  
+  delete[] frame_out;
 }
 
 }  // namespace CGL

@@ -124,14 +124,14 @@ class BVHAccel : public Aggregate {
   /**
    * Draw the BVH with OpenGL - used in visualizer
    */
-  void draw(const Color& c) const { }
-  void draw(BVHNode *node, const Color& c) const;
+  void draw(const Color& c, float alpha) const { }
+  void draw(BVHNode *node, const Color& c, float alpha) const;
 
   /**
    * Draw the BVH outline with OpenGL - used in visualizer
    */
-  void drawOutline(const Color& c) const { }
-  void drawOutline(BVHNode *node, const Color& c) const;
+  void drawOutline(const Color& c, float alpha) const { }
+  void drawOutline(BVHNode *node, const Color& c, float alpha) const;
 
   mutable unsigned long long total_rays, total_isects;
  private:

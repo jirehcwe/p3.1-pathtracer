@@ -14,42 +14,45 @@ bool BBox::intersect(const Ray& r, double& t0, double& t1) const {
   // If the ray intersected the bouding box within the range given by
   // t0, t1, update t0 and t1 with the new intersection times.
 
+  
   return false;
+
+  
 }
 
-void BBox::draw(Color c) const {
+void BBox::draw(Color c, float alpha) const {
 
-  glColor4f(c.r, c.g, c.b, c.a);
+  glColor4f(c.r, c.g, c.b, alpha);
 
-	// top
-	glBegin(GL_LINE_STRIP);
-	glVertex3d(max.x, max.y, max.z);
+  // top
+  glBegin(GL_LINE_STRIP);
+  glVertex3d(max.x, max.y, max.z);
   glVertex3d(max.x, max.y, min.z);
   glVertex3d(min.x, max.y, min.z);
   glVertex3d(min.x, max.y, max.z);
   glVertex3d(max.x, max.y, max.z);
-	glEnd();
+  glEnd();
 
-	// bottom
-	glBegin(GL_LINE_STRIP);
+  // bottom
+  glBegin(GL_LINE_STRIP);
   glVertex3d(min.x, min.y, min.z);
   glVertex3d(min.x, min.y, max.z);
   glVertex3d(max.x, min.y, max.z);
   glVertex3d(max.x, min.y, min.z);
   glVertex3d(min.x, min.y, min.z);
-	glEnd();
+  glEnd();
 
-	// side
-	glBegin(GL_LINES);
-	glVertex3d(max.x, max.y, max.z);
+  // side
+  glBegin(GL_LINES);
+  glVertex3d(max.x, max.y, max.z);
   glVertex3d(max.x, min.y, max.z);
-	glVertex3d(max.x, max.y, min.z);
+  glVertex3d(max.x, max.y, min.z);
   glVertex3d(max.x, min.y, min.z);
-	glVertex3d(min.x, max.y, min.z);
+  glVertex3d(min.x, max.y, min.z);
   glVertex3d(min.x, min.y, min.z);
-	glVertex3d(min.x, max.y, max.z);
+  glVertex3d(min.x, max.y, max.z);
   glVertex3d(min.x, min.y, max.z);
-	glEnd();
+  glEnd();
 
 }
 

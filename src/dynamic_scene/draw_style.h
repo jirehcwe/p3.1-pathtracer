@@ -17,21 +17,41 @@ class DrawStyle {
   }
 
   void style_face() const {
-    glColor4fv(&faceColor.r);
+    GLfloat temp[4];
+    temp[0] = faceColor.r;
+    temp[1] = faceColor.g;
+    temp[2] = faceColor.b;
+    temp[3] = 1.f;
+    glColor4fv(temp);
   }
 
   void style_edge() const {
-    glColor4fv(&edgeColor.r);
+    GLfloat temp[4];
+    temp[0] = edgeColor.r;
+    temp[1] = edgeColor.g;
+    temp[2] = edgeColor.b;
+    temp[3] = 1.f;
+    glColor4fv(temp);
     glLineWidth(strokeWidth);
   }
 
   void style_halfedge() const {
-    glColor4fv(&halfedgeColor.r);
+    GLfloat temp[4];
+    temp[0] = halfedgeColor.r;
+    temp[1] = halfedgeColor.g;
+    temp[2] = halfedgeColor.b;
+    temp[3] = 1.f;
+    glColor4fv(temp);
     glLineWidth(strokeWidth);
   }
 
   void style_vertex() const {
-    glColor4fv(&vertexColor.r);
+    GLfloat temp[4];
+    temp[0] = vertexColor.r;
+    temp[1] = vertexColor.g;
+    temp[2] = vertexColor.b;
+    temp[3] = 1.f;
+    glColor4fv(temp);
     glPointSize(vertexRadius);
   }
 

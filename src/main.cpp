@@ -10,7 +10,11 @@ typedef uint32_t gid_t;
 typedef uint32_t gid_t;
 
 #include <iostream>
+#ifdef _WIN32
+#include "misc/getopt.h"
+#else
 #include <unistd.h>
+#endif
 
 using namespace std;
 using namespace CGL;

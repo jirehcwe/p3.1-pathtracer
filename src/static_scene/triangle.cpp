@@ -19,26 +19,35 @@ BBox Triangle::get_bbox() const {
 }
 
 bool Triangle::intersect(const Ray& r) const {
-  
-  // Part 1, Task 3: implement ray-triangle intersection
+
+  // TODO (Part 1.3):
+  // implement ray-triangle intersection
+
   Vector3D p1(mesh->positions[v1]), p2(mesh->positions[v2]), p3(mesh->positions[v3]);
+  
 
   return false;
+
+
 }
 
 bool Triangle::intersect(const Ray& r, Intersection *isect) const {
   
-  // Part 1, Task 3: 
+  // TODO (Part 1.3):
   // implement ray-triangle intersection. When an intersection takes
   // place, the Intersection data should be updated accordingly
+
   Vector3D p1(mesh->positions[v1]), p2(mesh->positions[v2]), p3(mesh->positions[v3]);
   Vector3D n1(mesh->normals[v1]), n2(mesh->normals[v2]), n3(mesh->normals[v3]);
   
+  
   return false;
+
+  
 }
 
-void Triangle::draw(const Color& c) const {
-  glColor4f(c.r, c.g, c.b, c.a);
+void Triangle::draw(const Color& c, float alpha) const {
+  glColor4f(c.r, c.g, c.b, alpha);
   glBegin(GL_TRIANGLES);
   glVertex3d(mesh->positions[v1].x,
              mesh->positions[v1].y,
@@ -52,8 +61,8 @@ void Triangle::draw(const Color& c) const {
   glEnd();
 }
 
-void Triangle::drawOutline(const Color& c) const {
-  glColor4f(c.r, c.g, c.b, c.a);
+void Triangle::drawOutline(const Color& c, float alpha) const {
+  glColor4f(c.r, c.g, c.b, alpha);
   glBegin(GL_LINE_LOOP);
   glVertex3d(mesh->positions[v1].x,
              mesh->positions[v1].y,

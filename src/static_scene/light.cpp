@@ -37,7 +37,7 @@ Spectrum InfiniteHemisphereLight::sample_L(const Vector3D& p, Vector3D* wi,
   Vector3D dir = sampler.get_sample();
   *wi = sampleToWorld* dir;
   *distToLight = INF_D;
-  *pdf = 1.0 / (2.0 * M_PI);
+  *pdf = 1.0 / (2.0 * PI);
   return radiance;
 }
 
