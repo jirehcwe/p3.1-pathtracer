@@ -1,60 +1,377 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
-<style>  
-    div.padded {  
-      padding-top: 0px;  
-      padding-right: 100px;  
-      padding-bottom: 0.25in;  
-      padding-left: 100px;  
-    }  
-  </style> 
-<title>Your Name  |  CS 184</title>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Mesh Editor</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
-<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
 </head>
+
+
 <body>
-<br />
-<h1 align="middle">Assignment 3: PathTracer</h1>
-    <h2 align="middle">Your Name</h2>
 
-    <div class="padded">
-        <p>Use this section to write an overview of the assignment. All of the text in your write-up should be <em>in your own words</em>. If you need to add additional HTML features to this document, you can search the <a href="http://www.w3schools.com/">http://www.w3schools.com/</a> website for instructions. To edit the HTML, you can just copy and paste existing chunks and fill in the text and image file names appropriately.</p>
-        <o>The website writeup is intended to be a self-contained walkthrough of the assignment: we want this to be a piece of work which showcases your understanding of relevant concepts through both mesh images as well as written explanations about what you did to complete each part of the assignment. Try to be as clear and organized as possible when writing about your own output files or extensions to the assignment. We want to understand what you've achieved and how you've done it!</p> 
-        <p>If you are well-versed in web development, feel free to ditch this template and make a better looking page. Just make sure that you include all the components as we've laid them out here. </p>
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2019</h1>
+<h1 align="middle">Project 3: Pathtracer</h1>
+<h2 align="middle">Jireh Wei En Chew, CS184-agu</h2>
 
-    <h2 align="middle">Part 1: Ray Generation and Intersection</h2>
-        <p>Describe what you did in Part 1. etc...</p>
-        <div align="center">
-            <table style="width=100%">
-                <tr>
-                    <td align="middle">
-                    <img src="images/example_image.png" width="480px" />
-                    <figcaption align="middle">Results Caption: my bunny is the bounciest bunny</figcaption>
-                </tr>
-            </table>
-        </div>
-        <p>Here is an example of how to include a simple formula:</p>
-        <p align="middle"><pre align="middle">a^2 + b^2 = c^2</pre></p>
-        <p>or, alternatively, you can include an SVG image of a LaTex formula.</p>
-        <p>This time it's your job to copy-paste in the rest of the sections :)</p>
+<br><br>
+
+<div>
+
+<h1 align="middle">Overview</h2>
+<p>Overview</p>
 
 
+<h2 align="middle">Part 1: Ray Generation and Scene Intersection</h3>
+<p>Using the <i>ns_aa</i> argument, we decided which part of the current pixel being raytraced
+   we would shoot a ray through. If only 1 ray was used, we would take the centre of the pixel
+  and use the provided <i>est_radiance_global_illumination</i> method to obtain the radiance of the ray.
+<br>
+If not, we would randomly pick <i>ns_aa</i> number of rays and average the samples we got.
 
-    <h2 align="middle">A Few Notes On Webpages</h2>
-        <p>Here are a few problems students have encountered in the past. You will probably encounter these problems at some point, so don't wait until right before the deadline to check that everything is working. Test your website on the instructional machines early!</p>
-        <ul>
-        <li>Your main report page should be called index.html.</li>
-        <li>Be sure to include and turn in all of the other files (such as images) that are linked in your report!</li>
-        <li>Use only <em>relative</em> paths to files, such as <pre>"./images/image.jpg"</pre>
-        Do <em>NOT</em> use absolute paths, such as <pre>"/Users/student/Desktop/image.jpg"</pre></li>
-        <li>Pay close attention to your filename extensions. Remember that on UNIX systems (such as the instructional machines), capitalization matters. <pre>.png != .jpeg != .jpg != .JPG</pre>
-        <li>Be sure to adjust the permissions on your files so that they are world readable. For more information on this please see this tutorial: <a href="http://www.grymoire.com/Unix/Permissions.html">http://www.grymoire.com/Unix/Permissions.html</a></li>
-        <li>And again, test your website on the instructional machines early!</li>
+<br><br>
+In generating the rays, we performed the following calculations to find our ray in world space:
+<ol>
+  <li>
+    Interpolated between the (0,0) and (1,1) positions of in camera space using the random x and y 
+    values given in the section above. <br>
+    The z value was kept at -1 as the sensor plane was at z = -1.
+  </li>
+  <li>
+    Normalized the vector to ensure it was at unit length.
+  </li>
+  <li>
+    Used <i>c2w</i> multiplication vector to transform the camera space coordinates to world space
+     coordinates.
+  </li>
+  <li>
+    Created a ray with the position starting at the camera position <i>pos</i> and direction of the 
+    calculated world space ray above.
+  </li>
+  <li>
+    Set the ray's minimum and maximum cast distance to the near and far clipping planes of the camera.
+  </li>
+</ol>
+
+<br><br>
+
+In order to render triangles and spheres, we implemented methods to calculate for the intersection 
+of rays on such objects.
+
+<ul>
+  <li>
+    Intersecting triangles (Möller Trumbore Algorithm):
+    <ol>
+      <li>
+        We use the Möller Trumbore algorithm to calculate our barycentric coordinates for the point
+         on the plane using the 3 vertices of the triangle.
+      </li>
+      <li>
+        In more detail, we make use of Cramer's rule to find the solutions for the 
+        barycentric representation of the
+         point equated with the equation of the ray.
+      </li>
+      <li>
+        We then check if the barycentric coordinates lie inside the triangle using the test we 
+        implemented in Project 1.
+      </li>
+      <li>
+        We check the β and γ values such that they lie within the 0 to 1 range (inclusive). 
+      </li>
+      <li>
+        We also check the α value (representing t in the ray equation) such that it lies between 
+        the minimum and maximum t value of the ray.
+      </li>
+      <li>
+        Lastly, to improve performance, we limit the maximum t value to this value of α if all these tests pass
+         since the ray cannot pass through to triangles beyond this point.
+      </li>
+      <li>
+        Additionally, we also fill <i>isect</i> with the necessary information about the intersection.
+      </li>
+    </ol>
+  </li>
+  <li>
+    Intersecting spheres: Solving squares
+    <ol>
+      <li>
+        Solving for intersection with a sphere is simpler and we use the equation of the 
+        sphere and equate that to the ray equation.
+      </li>
+      <li>
+        On simplifying, we get a quadratic equation which we can then complete the square.
+      </li>
+      <li>
+        We calculate the determinant first. Upon a negative determinant, we return false as there is no intersection.
+      </li>
+      <li>
+        If it is 0, we set <i>t1</i> and <i>t2</i> to be both -b/2a and return true.
+      </li>
+      <li>
+        If not, we calculate both <i>t1</i> and <i>t2</i> and set <i>t1</i> to be the smaller value and return true.
+      </li>
+      <li>
+        Similarly to the triangle intersection, we limit the maximum t value of the ray to be the t value at the intersection point.
+      </li>
+      <li>
+        We also fill <i>i</i>, the <i>Intersection</i> with the appropriate values.
+      </li>
+      </li>
+    </ul>
+  </li>
+</ol>
+</p>
+
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/Spheres .37s.png" align="middle" width="400px"/>
+          <figcaption align="middle">Rendering of spheres: .37 seconds</figcaption>
+        </td>
+        <td>
+            <img src="images/Gems 3.8s.png" align="middle" width="400px"/>
+            <figcaption align="middle">Rendering of gems: 3.8 seconds</figcaption>
+          </td>
+      </tr>
+      <br>
+      <tr>
+        <td>
+          <img src="images/Cow 94s.png" align="middle" width="400px"/>
+          <figcaption align="middle">Rendering of cow: 94 seconds</figcaption>
+        </td>
+        <td>
+            <img src="images/Coil 147s.png" align="middle" width="400px"/>
+            <figcaption align="middle">Rendering of coil: 147 seconds</figcaption>
+          </td>
+      </tr>
+    </table>
+  </div>
+
+
+<h2 align="middle">Part 2: Bounding Volume Hierarchy</h3>
+
+<p></p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="Images/Part2 Teapot.png" align="middle" width="600px"/>
+        <figcaption align="middle"><i>Here is my handle, and here is my spout.</i></figcaption>
+      </td>
+    </tr>
+  </table>
 </div>
+
+<h2 align="middle">Section II: Sampling</h2>
+
+<h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+
+<p>From a high-level perspective, I walked around the halfedges that were connected to the vertex, and 
+  calculated the area-weighted normals of each of the faces belonging to the halfedges using the cross product.
+   I normalized this summed normal and returned it as the new normal for the current vertex.
+  <br> <br>
+  More specifically:
+<ol>
+  <li>Cached the central point as a <i>Vector3D</i> to be used in calculation of the edge vectors.</li>
+  <li>Cached a reference to the starting twin halfedge (the halfedge pointing towards the central vertex.)</li>
+  <li>In a while loop, calculate 2 vectors of the edges of the triangles, by using 3 points: <ul><li>The cached common point in step 1.</li><li>The further point belonging to the current halfedge pointing towards the central point.</li><li>The further point belonging to the twin of the next halfedge.</li></ul></li>
+  <li>Take half of the cross product of these 2 vectors and add it to the summing vector for the normals.</li>
+  <li>Since the cross product's magnitude is twice the area of the triangle that these 2 vectors define, the addition I do in step 4 is already area-weighting each normal.</li>
+  <li>Returning the normalized value of the sum gives the area-weighted normal for the current vertex.</li>
+</ol></p>
+
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="Images/Part3 Q toggle.gif" align="middle" width="600px"/>
+          <figcaption align="middle"><i>Be...our...guest, be our guest, put our renderer to the test!</i></figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+<h3 align="middle">Part 4: Half-edge flip</h3>
+
+<p>The <i>flipEdge</i> function was implemented in these steps:
+<ol>
+  <li>I collected every halfedge (10), vertex (4), edge (5) and face (2) reference, with 21 in total including the provided edge.</li>
+  <li>I reassigned every element in each halfedge.<ul>
+    <li>next(), twin(), vertex(), edge(), face()</li>
+  </ul></li>
+  <li>I reassigned every vertex's halfedge.</li>
+  <li>I reassigned every edge's halfedge.</li>
+  <li>I reassigned every face's halfedge.</li>
+
+  By following the method described in the implementation guide provided, I did not encounter any major bugs. 
+</ol></p>
+
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="Images/Part4 Flipping Edges.gif" align="middle" width="600px"/>
+          <figcaption align="middle"><i>Flipping edges!</i></figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+<h3 align="middle">Part 5: Half-edge split</h3>
+
+<p>The <i>splitEdge</i> function was implemented in these steps:
+  <ol>
+    <li>I collected every halfedge (10), vertex (4), edge (5) and face (2) reference, with 21 in total including the provided edge.</li>
+    <li>I also created new halfedges (6), vertices (1), edges (3) and faces (2) with 12 in total.</li>
+    <li>I reassigned every element in each halfedge.<ul>
+      <li>next(), twin(), vertex(), edge(), face()</li>
+    </ul></li>
+    <li>I reassigned every vertex's halfedge.</li>
+    <li>I reassigned every edge's halfedge.</li>
+    <li>I reassigned every face's halfedge.</li>
+  
+    <br>
+    I also drew my own reassignment diagram for reference. No major bugs were found, except when I assigned both f0 and f1 to the same face. That took a while to find.
+  </ol></p>
+
+  <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="Images/Part5 Reference.jpg" align="middle" width="400px"/>
+            <figcaption align="middle"><i>Reference diagram for splitting edges.</i></figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  <div align="middle">
+      <table style="width=100%">
+        <tr>
+          <td>
+            <img src="Images/Part5 Splitting.gif" align="middle" width="600px"/>
+            <figcaption align="middle">Splitting tris of a teapot.<i>"It ain't much, but it's honest work."</i></figcaption>
+          </td>
+        </tr>
+        <br>
+        <tr>
+          <td>
+            <img src="Images/Part5 Flip and Split.gif" align="middle" width="600px"/>
+            <figcaption align="middle">Flipping and splitting. Kind of like my ex and I.</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+<h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
+
+<p>I carried out Loop subdivision as such:
+  <ol>
+    <li>Iterating over all vertices, computed all the new positions for the old vertices using the formula given.</li>
+    <li>Iterating over all edges, computed all new positions for vertices formed from split edges.</li>
+    <li>At the same time, cache all these edges into a vector for the next step.</li>
+    <li>Split all edges in the cached vector.
+      <ul>
+        <li>Assigned isNew = false for 2 edges that made up the original edge.</li>
+        <li>Assigned isNew = true for 2 new edges created during spitting</li>
+        <li>Transfer the newPosition from the old edge to the newPosition of the new vertex created from splitting.</li>
+      </ul>
+      <li>Flip edges conneced to 1 old and 1 new point.<ul><li>Used a XOR operator for this.</li></ul></li>
+      <li>Finally, copy all newPositions and replace the positions of all vertices with newPositions.</li>
+    </li>
+  </ol>
+</p>
+
+<p></p>
+
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="Images/Part6 NoSplit.gif" align="middle" width="400px"/>
+          <figcaption align="middle">No splitting of any vertices.</figcaption>
+        </td>
+        <td>
+            <img src="Images/Part6 2Split.gif" align="middle" width="400px"/>
+            <figcaption align="middle">Splitting the upper and lower surfaces of the protrusion.</figcaption>
+          </td>
+      </tr>
+      <br>
+      <tr>
+        <td>
+          <img src="Images/Part6 NoSplit Freeze.png" align="middle" width="400px"/>
+          <figcaption align="middle">Freeze frame for comparison.</figcaption>
+        </td>
+        <td>
+            <img src="Images/Part6 2Split Freeze.png" align="middle" width="400px"/>
+            <figcaption align="middle">Just splitting the sides of the torus creates less flexibility in points.</figcaption>
+          </td>
+      </tr>
+    </table>
+  </div>
+<br>
+<h3><p><i>"Can you pre-process the cube with flip and split so it subdivides symmetrically? Document these effects and explain why they occur, and how your pre-processing helps alleviate the effects."</i></p></h3>
+<p>In order to make the resulting upsampled cube symmetric, I hypothesised that the degree of the vertices mattered. I flipped the edges of the cube such as at
+   opposite ends, the vertices of the cube both have degree of 6. This also meant that every other vertex degree would be 4.</p>
+
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="Images/Part6 StratFlip.gif" align="middle" width="600px"/>
+          <figcaption align="middle"><i>Setting opposite facing vertices to degree 6.<br> As a consequence, all other vertex degrees have to be 4.</i></figcaption>
+        </td>
+      </tr>
+    </table>
+  </div>
+
+ <p>Upon upsampling, this created a hexagonal-esque pillow shape. My belief is that the original degrees are always conserved, but the points are moved slightly inward.
+   As such, like for the icosahedron, when upsampling, we see that there are always 12 vertices with a degree of 5 (from the original shape) that are preserved. So, in order to
+   get symmetric shape for the cube, we need the symmetric vertex degrees to be the same as well.
+ </p>
+
+ <div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="Images/Part6 Hexagon Pillow.gif" align="middle" width="600px"/>
+          <figcaption align="middle"><i>Symmetric shape yielded by symmetric vertex degrees.</i></figcaption>
+        </td>
+      </tr>
+      <br>
+      <tr>
+          <td>
+            <img src="Images/Part6 PreservedDegree.png" align="middle" width="600px"/>
+            <figcaption align="middle"><i>Zooming into one of the points on the shape, we see that the<br> degree 4 vertex is still preserved, circled in red.</i></figcaption>
+          </td>
+        </tr>
+    </table>
+  </div>
+
+
+
+
+<h2 align="middle">Section III: Mesh Competition</h2>
+<p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
+
+<h3 align="middle">Part 7: Design your own mesh!</h3>
+
+
+
 </body>
 </html>
-
-
-
-

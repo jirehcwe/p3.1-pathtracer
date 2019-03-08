@@ -633,6 +633,22 @@ Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
   // through the scene. Return the average Spectrum. 
   // You should call est_radiance_global_illumination in this function.
 
+  double width = (double)x;
+  double height = (double)y;
+  if (ns_aa == 1){
+    
+    return est_radiance_global_illumination(camera->generate_ray((width+ 0.5)/(double)sampleBuffer.w, (height + 0.5)/(double)sampleBuffer.h));
+  }
+
+  Spectrum sum = Spectrum(0, 0, 0);
+  for (int i=0; i < ns_aa ; i++){
+    Vector2D randomSample = gridSampler->get_sample();
+
+    sum += est_radiance_global_illumination(camera->generate_ray((width+randomSample.x)/(double)sampleBuffer.w, (height + randomSample.y)/(double)sampleBuffer.h));
+  }
+
+  return sum/(double)ns_aa;
+
   // TODO (Part 5):
   // Modify your implementation to include adaptive sampling.
   // Use the command line parameters "samplesPerBatch" and "maxTolerance"
