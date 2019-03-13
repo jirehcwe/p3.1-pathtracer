@@ -20,54 +20,38 @@ bool BBox::intersect(const Ray& r, double& t0, double& t1) const {
   double tYmax = (max.y - r.o.y)/r.d.y;
   double tZmax = (max.z - r.o.z)/r.d.z;
 
+  if (tXmin > tXmax){
+    double temp = tXmax;
+    tXmax = tXmin;
+    tXmin = temp; 
+  }
+  if (tYmin > tYmax){
+    double temp = tYmax;
+    tYmax = tYmin;
+    tYmin = temp;
+  }
+  if (tZmin > tZmax){
+    double temp = tZmax;
+    tZmax = tZmin;
+    tZmin = temp;
+  }
+
 
   double test0, test1;
 
-  if (tXmin > tYmin){
-    if (tXmin > tZmin){
-      test0 = tXmin;
-    } else {
-      test0 = tZmin;
-    }
-  } else {
-    if (tYmin > tZmin){
-      test0 = tYmin;
-    } else {
-      test0 = tZmin;
-    }
-  }
+  //Finding maximum of mins and mins of maxes
+  test0 = std::max (std::max(tXmin, tYmin), tZmin);
+  test1 = std::min (std::min(tXmax, tYmax), tZmax);
 
-  if (tXmax > tYmax){
-    if (tXmax > tZmax){
-      test1 = tXmax;
-    } else {
-      test1 = tZmax;
-    }
-  } else {
-    if (tYmax > tZmax){
-      test1 = tYmax;
-    } else {
-      test1 = tZmax;
-    }
-  }
-
-  // double test0 = (tXmin > tYmin ? tXmin : tYmin) > (tYmin > tZmin ? tYmin : tZmin) ? (tXmin > tYmin ? tXmin : tYmin) : (tYmin > tZmin ? tYmin : tZmin);
-  // double test1 = (tXmax < tYmax ? tXmax : tYmax) < (tYmax < tZmax ? tYmax : tZmax) ? (tXmax < tYmax ? tXmax : tYmax) : (tYmax < tZmax ? tYmax : tZmax);
-  
-  
-
-  // if (test0 < test1){
-  //   return false;
-  // } else 
-  if (test0 < 0 && test1 < 0){
+  if (test0 > test1){
     return false;
-  } else {
-    t0 = test0;
-    t1 = test1;
-    return true;
   }
 
-  
+  // if (test0 < t0 || test1 > t1 || test0 < r.min_t || test1 > r.max_t){
+  //   return false;
+  // }
+
+  return true;
 }
 
 void BBox::draw(Color c, float alpha) const {

@@ -53,19 +53,6 @@ BVHNode *BVHAccel::construct_bvh(const std::vector<Primitive*>& prims, size_t ma
   // single leaf node (which is also the root) that encloses all the
   // primitives.
 
-  //  BBox centroid_box, bbox;
-
-  //   for (Primitive *p : prims) {
-  //     BBox bb = p->get_bbox();
-  //     bbox.expand(bb);
-  //     Vector3D c = bb.centroid();
-  //     centroid_box.expand(c);
-  // }
-
-  // BVHNode *node = new BVHNode(bbox);
-  // node->prims = new vector<Primitive *>(prims);
-  // return node;
-
   BBox bbox;
   Vector3D mainCentroid;
   BVHNode *node;
@@ -76,8 +63,8 @@ BVHNode *BVHAccel::construct_bvh(const std::vector<Primitive*>& prims, size_t ma
         BBox bb = p->get_bbox();
         bbox.expand(bb); 
   }
-  mainCentroid = bbox.centroid();
-  Vector3D mainExtent = bbox.extent;
+  
+ 
 
 
   node = new BVHNode(bbox);
@@ -91,6 +78,7 @@ BVHNode *BVHAccel::construct_bvh(const std::vector<Primitive*>& prims, size_t ma
   //Calculating largest axis to split along
   double splitAxis;
   int axisNum;
+  Vector3D mainExtent = bbox.extent;
   
   if (mainExtent.x > mainExtent.y){
     if (mainExtent.x > mainExtent.z){
@@ -147,15 +135,12 @@ BVHNode *BVHAccel::construct_bvh(const std::vector<Primitive*>& prims, size_t ma
   }
 
   if (left.size() == 0){
-    for (int i=0; i < right.size()/2; i++){
       left.push_back(*(right.end()));
       right.pop_back();
-    }
+    
   } else if (right.size() == 0){
-    for (int i=0; i < left.size()/2; i++){
       right.push_back(*(left.end()));
       left.pop_back();
-    }
   }
   
   node->l = construct_bvh(left, max_leaf_size);
@@ -177,83 +162,63 @@ bool BVHAccel::intersect(const Ray& ray, BVHNode *node) const {
 // Intersection version cannot, since it returns as soon as it finds
 // a hit, it doesn't actually have to find the closest hit.
 
-  // for (Primitive *p : *(root->prims)) {
-  //   total_isects++;
-  //   if (p->intersect(ray)) 
-  //     return true;
-  // }
 
-  // return false;
-
-  double t0, t1;
-  if (!node->bb.intersect(ray, t0, t1)) {
+  double t0 = ray.min_t, t1 = ray.max_t;
+  if (!node->bb.intersect(ray, t0, t1)){
     return false;
   }
-  
-  ray.min_t = t0;
-  ray.max_t = t1;
 
-  if (node->isLeaf()) {
-    for (Primitive *p : *node->prims)
-    {
+  if (t0 < ray.min_t || t1 < ray.min_t ||t0 > ray.max_t || t1 > ray.max_t){
+    return false;
+  }
+
+
+  if (node->isLeaf()){
+    for (Primitive *p : *node->prims){
       total_isects++;
-      if (p->intersect(ray))
-      {
+      if (p->intersect(ray)){
         return true;
       }
     }
+
     return false;
   }
-  
-  bool hit1 = intersect(ray, node->l);
-  bool hit2 = intersect(ray, node->r);
-  
-  return (hit1 || hit2);
+
+  return (intersect(ray, node->l) || intersect(ray, node->r));
+
 }
 
 bool BVHAccel::intersect(const Ray& ray, Intersection* i, BVHNode *node) const {
 
   // TODO (Part 2.3):
-  // Fill in the intersect function.
-  // Take note that this function has a short-circuit that the
-  // Intersection version cannot, since it returns as soon as it finds
-  // a hit, it doesn't actually have to find the closest hit.
+  //Fill in the intersection function.
 
-  // bool hit = false;
-  // for (Primitive *p : *(root->prims)) {
-  //   total_isects++;
-  //   if (p->intersect(ray, i)) 
-  //     hit = true;
-  // }
-  // return hit;
-
-  double t0, t1, minTval = INF_D;
-  bool intersected = false;
-
+double t0 = ray.min_t, t1 = ray.max_t;
   if (!node->bb.intersect(ray, t0, t1)){
     return false;
   }
 
-  ray.min_t = t0;
-  ray.max_t = t1;
+  if (t0 < ray.min_t || t1 < ray.min_t || t0 > ray.max_t || t1 > ray.max_t){
+    return false;
+  }
 
-  if (node->isLeaf()){ 
-
-    for (Primitive *p : *(node->prims)){
+  bool intersected = false;
+  if (node->isLeaf()){
+    for (Primitive *p : *node->prims){
       total_isects++;
       if (p->intersect(ray, i)){
         intersected = true;
       }
     }
+
     return intersected;
   }
 
   bool hit1 = intersect(ray, i, node->l);
   bool hit2 = intersect(ray, i, node->r);
-  if (hit1 || hit2){
-    return true;
-  }
-  return false;
+
+  return (hit1 || hit2);
+
 }
 
 }  // namespace StaticScene

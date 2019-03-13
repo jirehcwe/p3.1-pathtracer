@@ -164,22 +164,114 @@ of rays on such objects.
 
 <h2 align="middle">Part 2: Bounding Volume Hierarchy</h3>
 
-<p></p>
+<p>The BVH construction algorithm uses a recursive function to partition the primitives of the mesh 
+  into leaves of a binary tree. When scanning for intersections with objects, we use this precomputed 
+  information to speed up checking for intersections.
+
+  These are the following steps for generating our BVH tree.
+  <ol>
+    <li>
+      At the start, this algorithm is performed on the root node, and the list of pointers to primitives 
+      is the full list of primitives.
+    </li>
+    <li>
+      Cycle through every primitive and create a bounding box for all primitives.
+    </li>
+    <li>
+      Create a new node with this bounding box.
+    </li>
+    <li>
+      Check if the size of the number of primitives is less than the <i>max_leaf_size</i>. If so, we 
+      treat this node as a leaf node and assign all the primtives to the <i>node->prims</i> variable of the 
+      node we created, and return it.
+    </li>
+    <li>
+      If it is not a leaf node, then we have to partition the primitives into the left and right subtrees.
+    </li>
+    <li>
+      Calculate, based on the size of the bounding box, the largest axis to split the current volume on.
+    </li>
+    <li>
+      We use a heuristic based on the average centroid of all the primitives, and partition the list of primitives 
+      based comparing on the largest axis we found. We separate the primitives into a <i>left</i> or <i>right</i> list.
+    </li>
+    <li>
+      If either list is empty, we take one primitive off the other list and push it into the empty list.
+      This prevents infinite recursion on an empty list.
+    </li>
+    <li>
+      We recurse with the left and the right list and set <i>node->l</i> and <i>node->r</i> to the resulting node.
+    </li>
+    <li>
+      Finally, we return the node.
+    </li>
+  </ol>
+
+  The BVH intersection algorithm has 2 versions, one that returns information about the intersection and another
+  that just returns true if there is an intersection. This is a recursive algorithm that traverses the BVH tree
+  structure we created above.
+
+  <ol>
+    <li>
+      First, check if the ray intersects the bounding box of the node. For the root node, this is the bounding box of the 
+      entire mesh. Return false if it doesn't intersect.
+    </li>
+    <li>
+      If intersects, we check if the ray falls between the t values that intersect the bounding box. Return false if it doesn't.
+    </li>
+    <li>
+      Next, check if the node is a leaf node. If it is, cycle through all primitives and check if the ray intersects with any primitive. 
+      Return immediately if true. <br>
+      If it's the second version, store a boolean for intersection and return it after cycling through every primitive. This is done so that the nearest
+       intersection will be stored, since the primitive intersection function culls all intersections beyond the current one. 
+    </li>
+    <li>
+      If it's not a leaf node, recurse and call the function on the left and right child of the node and returns if there is any intersection.
+    </li>
+  </ol>
+</p>
 
 <div align="middle">
   <table style="width=100%">
     <tr>
       <td>
-        <img src="Images/Part2 Teapot.png" align="middle" width="600px"/>
-        <figcaption align="middle"><i>Here is my handle, and here is my spout.</i></figcaption>
+        <img src="images/Dragon .25s.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rendering of dragon: .25 seconds</figcaption>
       </td>
+      <td>
+          <img src="images/Lucky .24s.png" align="middle" width="400px"/>
+          <figcaption align="middle">Rendering of Lucy: .24 seconds</figcaption>
+        </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/Beast .19s.png" align="middle" width="400px"/>
+        <figcaption align="middle">Rendering of beast: .19 seconds</figcaption>
+      </td>
+      <td>
+          <img src="images/Bunny .29s.png" align="middle" width="400px"/>
+          <figcaption align="middle">Rendering of bunny: .29 seconds</figcaption>
+        </td>
     </tr>
   </table>
 </div>
+<br>
 
-<h2 align="middle">Section II: Sampling</h2>
+<h3><b>Comparing speeds</b></h3>
 
-<h3 align="middle">Part 3: Average normals for half-edge meshes</h3>
+<p>In part 1, cow.dae took 94s to render. Now, it takes 0.22s. The overhead for building the BVH is only 
+  0.0052s, so the overhead for generating the BVH is insignificant compared to the improvements in speed.
+  This is in part enabled by the axis-aligned bounding boxes that reduce the amount of multiplications and 
+  divisions needs to calculate t values for the ray. In <i>BBox::intersect</i>, we perform a total of 6 subtractions 
+  and 6 divisions to determine if a ray intersects a box. Compared to the 3 subtractions, 6 multiplications and 
+  1 division to determine intersection at just a general plane , this saves a lot of compute. If we use better heuristics 
+  like the surface area heuristic in the lecture note, we will get even better partitions (if we multiply by 6, to check for general 
+  bounding boxes, this is a lot more). However, due to time
+   limitations, I was only able to use the average centroid position as a splitpoint. 
+</p>
+
+<h2 align="middle">Part 3: Direct Illumination</h3>
 
 <p>From a high-level perspective, I walked around the halfedges that were connected to the vertex, and 
   calculated the area-weighted normals of each of the faces belonging to the halfedges using the cross product.

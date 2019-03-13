@@ -40,6 +40,10 @@ bool Triangle::intersect(const Ray& r) const {
     return false;
   }
 
+  if (bary.x < 0){
+    return false;
+  }
+
   if (bary.x < r.min_t || bary.x > r.max_t){
     return false;
   }
@@ -70,9 +74,9 @@ bool Triangle::intersect(const Ray& r, Intersection *isect) const {
 
   Vector3D bary = (double)1/(dot(s1, e1))*(Vector3D(dot(s2, e2), dot(s1, s0), dot(s2, r.d)));
   
-  double b1 = bary.y;
-  double b2 = bary.z;
-  double b3 = 1 - b1- b2;
+  double b2 = bary.y;
+  double b3 = bary.z;
+  double b1 = 1 - b2- b3;
   
   
 

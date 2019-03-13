@@ -524,9 +524,27 @@ Spectrum PathTracer::estimate_direct_lighting_hemisphere(const Ray& r, const Int
   // TODO (Part 3.2): 
   // Write your sampling loop here
   // COMMENT OUT `normal_shading` IN `est_radiance_global_illumination` BEFORE YOU BEGIN
-  
 
-  return L_out;
+  for (int i=0;i< num_samples; i++){
+    Vector3D wi = hemisphereSampler->get_sample();
+    Vector3D wi_world = o2w * wi;
+    Ray sampleRay = Ray(hit_p + EPS_D*wi_world, wi_world);
+    Intersection newIsect;
+
+    if (bvh->intersect(sampleRay, &newIsect)){
+      //bsdf sets the amount of the light reflected
+      //cosine is angle and amount of light coming out based on the return value
+      //pdf is by monte carlo
+
+      //This is high variance.
+      Spectrum emission = newIsect.bsdf->get_emission();
+      Spectrum sample = emission*isect.bsdf->f(w_out, wi) * wi.z * 2.0 * (double)PI;
+      L_out += sample;
+
+    }
+  }
+
+  return L_out/(double)num_samples;
 
 
 }
@@ -550,7 +568,56 @@ Spectrum PathTracer::estimate_direct_lighting_importance(const Ray& r, const Int
   // TODO (Part 3.2): 
   // Here is where your code for looping over scene lights goes
   // COMMENT OUT `normal_shading` IN `est_radiance_global_illumination` BEFORE YOU BEGIN
+  int num_lights = scene->lights.size();
 
+  for (int i=0;i< num_lights;i++){
+      Vector3D wi;
+      float distToLight;
+      float pdf;
+
+
+    if (scene->lights[i]->is_delta_light()){
+      Spectrum lightSample = scene->lights[i]->sample_L(hit_p, &wi, &distToLight, &pdf);
+        Vector3D w_in = w2o * wi;
+
+        if (w_in.z >= 0){
+          Intersection shadowCheck;
+          Ray shadowRay(hit_p + EPS_D*wi, wi);
+          shadowRay.max_t = distToLight;
+          bool intersected = bvh->intersect(shadowRay, &shadowCheck);
+            
+          if (!intersected){
+            L_out += (lightSample * cos_theta(w_in) * isect.bsdf->f(w_out, w_in))/pdf;
+          }
+        }
+
+
+    }else{
+
+      Spectrum runningSample;
+      int num_samples = (int)ns_area_light;
+      for (int j=0; j< num_samples; j++){
+
+        Spectrum lightSample = scene->lights[i]->sample_L(hit_p, &wi, &distToLight, &pdf);
+        Vector3D w_in = w2o * wi;
+
+        if (w_in.z >= 0){
+          Intersection shadowCheck;
+          Ray shadowRay(hit_p + EPS_D*wi, wi);
+          shadowRay.max_t = distToLight;
+          bool intersected = bvh->intersect(shadowRay, &shadowCheck);
+            
+          if (!intersected){
+            runningSample += (lightSample * cos_theta(w_in) * isect.bsdf->f(w_out, w_in))/pdf;
+          }
+        }
+
+      }
+
+      L_out += runningSample/(double)num_samples;
+    }
+  }
+  
 
   return L_out;
 
@@ -562,8 +629,7 @@ Spectrum PathTracer::zero_bounce_radiance(const Ray&r, const Intersection& isect
   // TODO (Part 4.2):
   // Returns the light that results from no bounces of light
 
-  
-  return Spectrum();
+  return isect.bsdf->get_emission();
 
 
 }
@@ -575,8 +641,11 @@ Spectrum PathTracer::one_bounce_radiance(const Ray&r, const Intersection& isect)
   // depending on `direct_hemisphere_sample`
   // (you implemented these functions in Part 3)
 
-  
-  return Spectrum();
+  if (direct_hemisphere_sample){
+    return estimate_direct_lighting_hemisphere(r, isect);
+  } else {
+    return estimate_direct_lighting_importance(r, isect);
+  }
 
   
 }
@@ -595,9 +664,27 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
   // Here is where your code for sampling the BSDF,
   // performing Russian roulette step, and returning a recursively 
   // traced ray (when applicable) goes
-
-  return L_out;
+  Vector3D w_in;
+  float pdf; 
+  Spectrum bsdf = isect.bsdf->sample_f(w_out, &w_in, &pdf);
+  float rouletteProb = 0.7;
   
+  if(max_ray_depth <= 1){
+    return L_out;
+  }else if (coin_flip(rouletteProb) || r.depth == max_ray_depth){
+    Vector3D direction = o2w* w_in;
+    Ray bounceRay = Ray(hit_p + EPS_D*direction, direction, (int)r.depth - 1 );
+    Intersection bounceIsect;
+    if (bvh->intersect(bounceRay, &bounceIsect)){
+      Spectrum bounceSample = at_least_one_bounce_radiance(bounceRay, bounceIsect);
+      Spectrum weightedSample = bounceSample *isect.bsdf->f(w_out, w_in) * cos_theta(w_in)/ pdf / rouletteProb;
+      L_out += weightedSample;
+    }
+  }
+   
+
+  
+  return L_out;
 
 }
 
@@ -616,12 +703,17 @@ Spectrum PathTracer::est_radiance_global_illumination(const Ray &r) {
   // to the surface at the intersection point.
   // REMOVE IT when you are ready to begin Part 3.
 
-  return normal_shading(isect.n);
+  // return normal_shading(isect.n);
 
   // TODO (Part 3): Return the direct illumination.
 
+  // L_out = estimate_direct_lighting_hemisphere(r, isect);
+  // L_out = estimate_direct_lighting_importance(r, isect);
+
   // TODO (Part 4): Accumulate the "direct" and "indirect" 
   // parts of global illumination into L_out rather than just direct
+  // Intersection zeroBounceIsect;
+  L_out = zero_bounce_radiance(r, isect) + at_least_one_bounce_radiance(r, isect);
   
   return L_out;
 }
@@ -636,15 +728,15 @@ Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
   double width = (double)x;
   double height = (double)y;
   if (ns_aa == 1){
-    
     return est_radiance_global_illumination(camera->generate_ray((width+ 0.5)/(double)sampleBuffer.w, (height + 0.5)/(double)sampleBuffer.h));
   }
 
   Spectrum sum = Spectrum(0, 0, 0);
   for (int i=0; i < ns_aa ; i++){
     Vector2D randomSample = gridSampler->get_sample();
-
-    sum += est_radiance_global_illumination(camera->generate_ray((width+randomSample.x)/(double)sampleBuffer.w, (height + randomSample.y)/(double)sampleBuffer.h));
+    Ray ray = camera->generate_ray((width+randomSample.x)/(double)sampleBuffer.w, (height + randomSample.y)/(double)sampleBuffer.h);
+    ray.depth = max_ray_depth;
+    sum += est_radiance_global_illumination(ray);
   }
 
   return sum/(double)ns_aa;
