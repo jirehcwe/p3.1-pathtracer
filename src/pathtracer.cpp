@@ -659,7 +659,6 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
   Vector3D w_out = w2o * (-r.d);
 
   Spectrum L_out = one_bounce_radiance(r, isect);
-  return L_out;
   // TODO (Part 4.2): 
   // Here is where your code for sampling the BSDF,
   // performing Russian roulette step, and returning a recursively 
@@ -713,8 +712,8 @@ Spectrum PathTracer::est_radiance_global_illumination(const Ray &r) {
   // TODO (Part 4): Accumulate the "direct" and "indirect" 
   // parts of global illumination into L_out rather than just direct
 
-  L_out = at_least_one_bounce_radiance(r, isect);
-  //zero_bounce_radiance(r, isect) + 
+  L_out = zero_bounce_radiance(r, isect) + at_least_one_bounce_radiance(r, isect);
+  
   return L_out;
 }
 

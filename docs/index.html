@@ -517,7 +517,38 @@ Specific implementation details:
 
 <h2 align="middle">Part 5: Adaptive Sampling</h2>
 
-<p></p>
+<p>Since we have implemented indirect lighting, we are able to bounce many rays and get 
+  semi-realistic lighting. However, for parts of a scene, sometimes the bounces of light 
+  are not needed as the subsequent rays do not significantly change the value of the irradiance on 
+  that point. As such, we turn to adapative sampling to check if the value has converged.
+
+Implementation details in <i>raytrace_pixel</i>:
+<ol>
+  <li>If we have multiple camera rays per pixel, we initialise a running sum of the illumination
+     from <i>est_radiance_global_illumination</i> as <i>illumSum</i> or s1 in the spec.</li>
+  <li>Initialise a square sum of illumination to calculate our variance in <i>squaredIllumSum</i>, or s2 as specified in the spec.</li>
+  <li>Initialise a counter for the number of samples</li>
+  <li>For every sample, we add the illumination and squared illumination to these variables. We also increment the number of samples taken by 1.</li>
+  <li>Every <i>samplesPerBatch</i> number of samples, we calculate the mean and variable of the set of samples.</li>
+  <li>Use these values to calculate the convergence value of the set of samples.</li>
+  <li>If this convergence is less than or equal to the percentage tolerance of the mean, we break out of the loop.</li>
+  <li>We set the number of samples to the <i>sampleCountBuffer</i>.</li>
+  <li>Return the sum of samples averaged over the number of samples, rather than over the max of <i>ns_aa</i>.</li>
+</ol></p>
+
+<div align="middle">
+    <table style="width=100">
+      <tr>
+        <td>
+          <img src="images/Part_5_bunny_4096_samples_depth_5.png" align="middle" width="400px"/>
+          <figcaption align="middle">Very quiet bunny. <br>CBbunny.dae with 4096 samples per pixel and depth of 5.</figcaption>
+        </td>
+        <td>
+            <img src="images/Part_5_bunny_4096_samples_depth_5_rate.png" align="middle" width="400px"/>
+            <figcaption align="middle">The ambient occlusion at the corners and edges <br>have more bounces. Like the bunny.</figcaption>
+        </td>
+    </table>
+  </div>
 
 </body>
 </html>
