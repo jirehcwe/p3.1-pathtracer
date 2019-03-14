@@ -455,21 +455,22 @@ Specific implementation details:
       <tr>
         <td>
           <img src="images/Part4_bunny_1024_directonly.png" align="middle" width="400px"/>
-          <figcaption align="middle">A sad, dark bunny lit.<br>Lit by only direct lighting.</figcaption>
+          <figcaption align="middle">A sad, dark bunny.<br>Lit by only direct lighting.</figcaption>
         </td>
         <td>
-            <img src="images/Part4_spheres_1024_directonly.png" align="middle" width="400px"/>
-            <figcaption align="middle">Even sadder, darker spheres.<br>Also only direct lighting.</figcaption>
+            <img src="images/Part4_bunny_1024_indirectonly.png" align="middle" width="400px"/>
+            <figcaption align="middle">Bunny lit by only indirect lighting. <br>
+            We can see the colours reflected off the walls.</figcaption>
           </td>
       </tr>
       <tr>
         <td>
-          <img src="images/Part3_spheres_ray16_samples1.png" align="middle" width="400px"/>
-          <figcaption align="middle">Wait, these aren't bunnies, why are there so many?</figcaption>
+          <img src="images/Part4_spheres_1024_directonly.png" align="middle" width="400px"/>
+          <figcaption align="middle">Even sadder, darker spheres.<br>Also only direct lighting.</figcaption>
         </td>
         <td>
-            <img src="images/Part3_spheres_ray64_samples1.png" align="middle" width="400px"/>
-            <figcaption align="middle">Oh, light rays are mathematical bunnies. At least they aren't that noisy.</figcaption>
+            <img src="images/Part4_spheres_1024_indirectonly.png" align="middle" width="400px"/>
+            <figcaption align="middle">Spheres lit by only indirect lighting.<br>The spheres have colour from the walls.</figcaption>
           </td>
       </tr>
     </table>
@@ -513,7 +514,53 @@ Specific implementation details:
         </td>
       </tr>
 </div>
-  
+
+<h3>Sample-per-pixel rates at 1, 2, 4, 8, 64, 512, 1048 with 4 light rays, at depth of 5.</h3>
+
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/Part4_spheres_1sample_4rays.png" align="middle" width="400px"/>
+          <figcaption align="middle">Colour is reflected off the walls, but the image is noisy.<br>Only 1 sample per pixel.</figcaption>
+        </td>
+        <td>
+            <img src="images/Part4_spheres_2sample_4rays.png" align="middle" width="400px"/>
+            <figcaption align="middle">An improvement, but not enough.<br>2 samples per pixel.</figcaption>
+          </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="images/Part4_spheres_4sample_4rays.png" align="middle" width="400px"/>
+          <figcaption align="middle">Noise is decreasing with increasing samples.<br>4 samples per pixel.</figcaption>
+        </td>
+        <td>
+            <img src="images/Part4_spheres_8sample_4rays.png" align="middle" width="400px"/>
+            <figcaption align="middle">It's like slenderman in reverse!<br>8 samples per pixel.</figcaption>
+          </td>
+      </tr>
+      <tr>
+          <td>
+            <img src="images/Part4_spheres_16sample_4rays.png" align="middle" width="400px"/>
+            <figcaption align="middle">Is slenderman still here?<br>16 samples per pixel.</figcaption>
+          </td>
+          <td>
+              <img src="images/Part4_spheres_64sample_4rays.png" align="middle" width="400px"/>
+              <figcaption align="middle">Noise is almost gone!<br>64 samples per pixel.</figcaption>
+            </td>
+        </tr>
+        <tr>
+            <td>
+              <img src="images/Part4_spheres_512sample_4rays.png" align="middle" width="400px"/>
+              <figcaption align="middle">Is the noise really gone?<br>512 samples per pixel.</figcaption>
+            </td>
+            <td>
+                <img src="images/Part4_spheres_1024sample_4rays.png" align="middle" width="400px"/>
+                <figcaption align="middle">Yep, I think we're safe now. No more noise.<br>1024 samples per pixel.</figcaption>
+              </td>
+          </tr>
+    </table>
+  </div>  
 
 <h2 align="middle">Part 5: Adaptive Sampling</h2>
 

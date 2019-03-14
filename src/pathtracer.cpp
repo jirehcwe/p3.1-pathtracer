@@ -713,7 +713,6 @@ Spectrum PathTracer::est_radiance_global_illumination(const Ray &r) {
   // parts of global illumination into L_out rather than just direct
 
   L_out = zero_bounce_radiance(r, isect) + at_least_one_bounce_radiance(r, isect);
-  
   return L_out;
 }
 
