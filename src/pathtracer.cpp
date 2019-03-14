@@ -538,7 +538,7 @@ Spectrum PathTracer::estimate_direct_lighting_hemisphere(const Ray& r, const Int
 
       //This is high variance.
       Spectrum emission = newIsect.bsdf->get_emission();
-      Spectrum sample = emission*isect.bsdf->f(w_out, wi) * wi.z * 2.0 * (double)PI;
+      Spectrum sample = emission*isect.bsdf->f(w_out, wi) * cos_theta(wi) * 2.0 * (double)PI;
       L_out += sample;
 
     }
@@ -659,7 +659,7 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
   Vector3D w_out = w2o * (-r.d);
 
   Spectrum L_out = one_bounce_radiance(r, isect);
-
+  return L_out;
   // TODO (Part 4.2): 
   // Here is where your code for sampling the BSDF,
   // performing Russian roulette step, and returning a recursively 
@@ -668,7 +668,7 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
   float pdf; 
   Spectrum bsdf = isect.bsdf->sample_f(w_out, &w_in, &pdf);
   float rouletteProb = 0.7;
-  
+
   if(max_ray_depth <= 1){
     return L_out;
   }else if (coin_flip(rouletteProb) || r.depth == max_ray_depth){
@@ -677,7 +677,7 @@ Spectrum PathTracer::at_least_one_bounce_radiance(const Ray&r, const Intersectio
     Intersection bounceIsect;
     if (bvh->intersect(bounceRay, &bounceIsect)){
       Spectrum bounceSample = at_least_one_bounce_radiance(bounceRay, bounceIsect);
-      Spectrum weightedSample = bounceSample *isect.bsdf->f(w_out, w_in) * cos_theta(w_in)/ pdf / rouletteProb;
+      Spectrum weightedSample = bounceSample *bsdf * cos_theta(w_in)/ pdf / rouletteProb;
       L_out += weightedSample;
     }
   }
@@ -712,9 +712,9 @@ Spectrum PathTracer::est_radiance_global_illumination(const Ray &r) {
 
   // TODO (Part 4): Accumulate the "direct" and "indirect" 
   // parts of global illumination into L_out rather than just direct
-  // Intersection zeroBounceIsect;
-  L_out = zero_bounce_radiance(r, isect) + at_least_one_bounce_radiance(r, isect);
-  
+
+  L_out = at_least_one_bounce_radiance(r, isect);
+  //zero_bounce_radiance(r, isect) + 
   return L_out;
 }
 
@@ -728,29 +728,47 @@ Spectrum PathTracer::raytrace_pixel(size_t x, size_t y) {
   double width = (double)x;
   double height = (double)y;
   if (ns_aa == 1){
-    return est_radiance_global_illumination(camera->generate_ray((width+ 0.5)/(double)sampleBuffer.w, (height + 0.5)/(double)sampleBuffer.h));
+    Ray ray = camera->generate_ray((width+ 0.5)/(double)sampleBuffer.w, (height + 0.5)/(double)sampleBuffer.h);
+    ray.depth = max_ray_depth;
+    return est_radiance_global_illumination(ray);
   }
 
   Spectrum sum = Spectrum(0, 0, 0);
+  float illumSum = 0;
+  float squaredIllumSum = 0;
+  int currentNumSamples = 0;
   for (int i=0; i < ns_aa ; i++){
     Vector2D randomSample = gridSampler->get_sample();
     Ray ray = camera->generate_ray((width+randomSample.x)/(double)sampleBuffer.w, (height + randomSample.y)/(double)sampleBuffer.h);
     ray.depth = max_ray_depth;
-    sum += est_radiance_global_illumination(ray);
+    Spectrum currentLightSample = est_radiance_global_illumination(ray);
+    sum += currentLightSample;
+
+    //Adapative Sampling variables
+    illumSum += currentLightSample.illum();
+    squaredIllumSum += currentLightSample.illum() * currentLightSample.illum();
+    currentNumSamples++;
+
+    // //Calculate variance and mean
+    // if (currentNumSamples % samplesPerBatch == 0){
+    //   double mean = illumSum/currentNumSamples;
+    //   double variance = (squaredIllumSum - (illumSum*illumSum/currentNumSamples))/(currentNumSamples-1);
+    //   double standardDeviation = sqrt(variance);
+    //   double convergence = 1.96*standardDeviation/sqrt(currentNumSamples);
+    //   if (convergence <= maxTolerance*mean){
+    //     break;
+    //   }
+    // }
+
   }
 
-  return sum/(double)ns_aa;
 
   // TODO (Part 5):
   // Modify your implementation to include adaptive sampling.
   // Use the command line parameters "samplesPerBatch" and "maxTolerance"
 
-  int num_samples = ns_aa;            // total samples to evaluate
-  Vector2D origin = Vector2D(x,y);    // bottom left corner of the pixel
-
-
-  sampleCountBuffer[x + y * frameBuffer.w] = num_samples;
-  return Spectrum();
+  sampleCountBuffer[x + y * frameBuffer.w] = currentNumSamples;
+  return sum/(double)currentNumSamples;
 
 
 }

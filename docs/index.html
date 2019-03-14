@@ -161,7 +161,7 @@ of rays on such objects.
     </table>
   </div>
 
-
+<br><br>
 <h2 align="middle">Part 2: Bounding Volume Hierarchy</h3>
 
 <p>The BVH construction algorithm uses a recursive function to partition the primitives of the mesh 
@@ -270,200 +270,254 @@ of rays on such objects.
   bounding boxes, this is a lot more). However, due to time
    limitations, I was only able to use the average centroid position as a splitpoint. 
 </p>
-
+<br><br>
 <h2 align="middle">Part 3: Direct Illumination</h3>
 
-<p>From a high-level perspective, I walked around the halfedges that were connected to the vertex, and 
-  calculated the area-weighted normals of each of the faces belonging to the halfedges using the cross product.
-   I normalized this summed normal and returned it as the new normal for the current vertex.
-  <br> <br>
-  More specifically:
+<p>For an overview, <i>estimate_direct_lighting_hemisphere</i> takes rays from the camera, shoots it into the scene and
+generates a random ray from the point of contact, and then samples the light from the intersect of that random ray. If it 
+hits a light source, the point will get lit by the light source. However, since this is a random ray, and if there are limited 
+number of light sources for the ray to hit, this results in a lot of the scene having darker spots and noise.
+
+<br>
+Specific implementation details:
 <ol>
-  <li>Cached the central point as a <i>Vector3D</i> to be used in calculation of the edge vectors.</li>
-  <li>Cached a reference to the starting twin halfedge (the halfedge pointing towards the central vertex.)</li>
-  <li>In a while loop, calculate 2 vectors of the edges of the triangles, by using 3 points: <ul><li>The cached common point in step 1.</li><li>The further point belonging to the current halfedge pointing towards the central point.</li><li>The further point belonging to the twin of the next halfedge.</li></ul></li>
-  <li>Take half of the cross product of these 2 vectors and add it to the summing vector for the normals.</li>
-  <li>Since the cross product's magnitude is twice the area of the triangle that these 2 vectors define, the addition I do in step 4 is already area-weighting each normal.</li>
-  <li>Returning the normalized value of the sum gives the area-weighted normal for the current vertex.</li>
-</ol></p>
+  <li>
+    Calculate the hit point of the ray from the camera.
+  </li>
+  <li>
+    Convert that into an "outgoing" ray as that is the outgoing direction of the light back towards the camera.
+  </li>
+  <li>
+    Sampling over the number of lights in the scene multiplied by the number of samples to take per light source, we intiate a for loop over <i>num_samples</i>.
+    <ol>
+      <li>Take a random sample over a hemiphere.</li>
+      <li>Convert that sample into world space.</li>
+      <li>Create a ray shooting outward in this direction, originating from the point where the camera ray hits an object (let this be <i>CameraObject</i>) in the scene.</li>
+      <li>If the ray intersects something, we get the emission of the object. For non-light objects, this is 0.</li>
+      <li>Weight the sample by the bsdf of the <i>CameraObject</i>, the cosine of the sample and the pdf.</li>
+      <li>Add this to <i>L_out</i>over the total number of samples.</li>
+    </ol>
+  </li>
+  <li>Finally, return <i>L_out</i> divided by the number of samples taken to get the average lightning on the point on the <i>CameraObject</i>.</li>
+</ol>
 
-<div align="middle">
-    <table style="width=100%">
-      <tr>
-        <td>
-          <img src="Images/Part3 Q toggle.gif" align="middle" width="600px"/>
-          <figcaption align="middle"><i>Be...our...guest, be our guest, put our renderer to the test!</i></figcaption>
-        </td>
-      </tr>
-    </table>
-  </div>
+<br>
 
-<h3 align="middle">Part 4: Half-edge flip</h3>
+For <i>estimate_direct_lighting_importance</i> we reverse the process in that we shoot rays from the light towards objects, and collect those that end up hitting objects and 
+boucing towards the camera. This allows us to eliminate the noise since we are selecting the rays that will definitely light up the scene, rather than in hemisphere sampling where we
+randomly sample and hope to hit the light.
 
-<p>The <i>flipEdge</i> function was implemented in these steps:
-<ol>
-  <li>I collected every halfedge (10), vertex (4), edge (5) and face (2) reference, with 21 in total including the provided edge.</li>
-  <li>I reassigned every element in each halfedge.<ul>
-    <li>next(), twin(), vertex(), edge(), face()</li>
-  </ul></li>
-  <li>I reassigned every vertex's halfedge.</li>
-  <li>I reassigned every edge's halfedge.</li>
-  <li>I reassigned every face's halfedge.</li>
-
-  By following the method described in the implementation guide provided, I did not encounter any major bugs. 
-</ol></p>
-
-<div align="middle">
-    <table style="width=100%">
-      <tr>
-        <td>
-          <img src="Images/Part4 Flipping Edges.gif" align="middle" width="600px"/>
-          <figcaption align="middle"><i>Flipping edges!</i></figcaption>
-        </td>
-      </tr>
-    </table>
-  </div>
-
-<h3 align="middle">Part 5: Half-edge split</h3>
-
-<p>The <i>splitEdge</i> function was implemented in these steps:
-  <ol>
-    <li>I collected every halfedge (10), vertex (4), edge (5) and face (2) reference, with 21 in total including the provided edge.</li>
-    <li>I also created new halfedges (6), vertices (1), edges (3) and faces (2) with 12 in total.</li>
-    <li>I reassigned every element in each halfedge.<ul>
-      <li>next(), twin(), vertex(), edge(), face()</li>
-    </ul></li>
-    <li>I reassigned every vertex's halfedge.</li>
-    <li>I reassigned every edge's halfedge.</li>
-    <li>I reassigned every face's halfedge.</li>
-  
-    <br>
-    I also drew my own reassignment diagram for reference. No major bugs were found, except when I assigned both f0 and f1 to the same face. That took a while to find.
-  </ol></p>
-
-  <div align="middle">
-      <table style="width=100%">
-        <tr>
-          <td>
-            <img src="Images/Part5 Reference.jpg" align="middle" width="400px"/>
-            <figcaption align="middle"><i>Reference diagram for splitting edges.</i></figcaption>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-  <div align="middle">
-      <table style="width=100%">
-        <tr>
-          <td>
-            <img src="Images/Part5 Splitting.gif" align="middle" width="600px"/>
-            <figcaption align="middle">Splitting tris of a teapot.<i>"It ain't much, but it's honest work."</i></figcaption>
-          </td>
-        </tr>
-        <br>
-        <tr>
-          <td>
-            <img src="Images/Part5 Flip and Split.gif" align="middle" width="600px"/>
-            <figcaption align="middle">Flipping and splitting. Kind of like my ex and I.</figcaption>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-<h3 align="middle">Part 6: Loop subdivision for mesh upsampling</h3>
-
-<p>I carried out Loop subdivision as such:
-  <ol>
-    <li>Iterating over all vertices, computed all the new positions for the old vertices using the formula given.</li>
-    <li>Iterating over all edges, computed all new positions for vertices formed from split edges.</li>
-    <li>At the same time, cache all these edges into a vector for the next step.</li>
-    <li>Split all edges in the cached vector.
-      <ul>
-        <li>Assigned isNew = false for 2 edges that made up the original edge.</li>
-        <li>Assigned isNew = true for 2 new edges created during spitting</li>
-        <li>Transfer the newPosition from the old edge to the newPosition of the new vertex created from splitting.</li>
-      </ul>
-      <li>Flip edges conneced to 1 old and 1 new point.<ul><li>Used a XOR operator for this.</li></ul></li>
-      <li>Finally, copy all newPositions and replace the positions of all vertices with newPositions.</li>
-    </li>
-  </ol>
+<br>
+Specific implementation details:
+<ul>
+  <li>
+    Sampling over the number of lights in the scene we intiate a for loop.
+    <ol>
+    For delta (point) lights:
+      <li>Take a sample of the radiance of the light, while getting the direction of the light 
+        to the object we are testing, the distance to this light from the <i>CameraObject</i> ray hit point, and the pdf value. </li>
+      <li>Convert the direction to the object coordinate space</li>
+      <li>If the z value is less than 0, this means the direction is pointing behind the surface and we can ignore this intersection.</li>
+      <li>If it isn't, we create a ray from the hit point to the light and limit the t value to the distance to the light.</li>
+      <li>We check if this ray intersects any object with <i>bvh->intersect</i>. If it does, this means the hit point is obscured from the light by 
+        something and we can ignore the light contribution from this light.</li>
+      <li>Weight the light sample by the bsdf of the point on the <i>CameraObject</i>, the cosine of the direction and divide by the pdf.</li>
+      <li>If it doesn't intersect, this point has a direct line of sight to the light and we add the weighted light sample to <i>L_out</i>.</li>
+    </ol>
+    For area lights:
+    <ol>
+      We create another for loop for the number of samples per area light.
+      <li>
+        Similarly to the direct light, we perform the above steps.
+      </li>
+      <li>However, we accumulate the light samples we get over the for loop, and 
+        divide by the number of samples per area light to average over them.
+      </li>
+      <li> We then add this average to <i>L_out</i>. </li>
+    </ol>
+  </li>
+  <li>Finally, return <i>L_out</i></i>.</li>
+</ul>
+</p>
+<br>
+<br>
+<h3>Comparison between importance and hemisphere sampling</h3>
+<p>Here, we can compare the differences between hemisphere and importance sampling. For the bunny,
+  we see that hemisphere sampling is a lot noisier due to the randomness in starting from the hit point on the object 
+  and randomly shooting a ray to hit a light. However, with importance sampling, we say that we only want rays from the lights 
+  that hit the point that the camera rays hit, hence we eliminate randomness in the sense that we make sure every sample will only accumulate 
+  samples from lights. This is also why the dragon appears black in hemisphere sampling, as the light source is a point, and 
+  there is a very very low chance that a random ray will hit this point light. However, in importance sampling, we make sure that all rays we sample first hit the 
+  point light, then we calculate the light hitting the hit point on the <i>CameraObject</i>.
 </p>
 
-<p></p>
-
 <div align="middle">
-    <table style="width=100%">
-      <tr>
-        <td>
-          <img src="Images/Part6 NoSplit.gif" align="middle" width="400px"/>
-          <figcaption align="middle">No splitting of any vertices.</figcaption>
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/Part3_CBbunny_hemisphere.png" align="middle" width="400px"/>
+        <figcaption align="middle">Hemisphere sampling: Bunny is noisy.</figcaption>
+      </td>
+      <td>
+          <img src="images/Part3_CBbunny_importance.png" align="middle" width="400px"/>
+          <figcaption align="middle">Importance sampling: Bunny is quiet.</figcaption>
         </td>
-        <td>
-            <img src="Images/Part6 2Split.gif" align="middle" width="400px"/>
-            <figcaption align="middle">Splitting the upper and lower surfaces of the protrusion.</figcaption>
-          </td>
-      </tr>
-      <br>
-      <tr>
-        <td>
-          <img src="Images/Part6 NoSplit Freeze.png" align="middle" width="400px"/>
-          <figcaption align="middle">Freeze frame for comparison.</figcaption>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/Part3_dragon_hemisphere.png" align="middle" width="400px"/>
+        <figcaption align="middle">Hemisphere sampling: Hidden Dragon</figcaption>
+      </td>
+      <td>
+          <img src="images/Part3_dragon_importance.png" align="middle" width="400px"/>
+          <figcaption align="middle">Importance sampling: Crouching Tig- I mean, you can see him now!</figcaption>
         </td>
-        <td>
-            <img src="Images/Part6 2Split Freeze.png" align="middle" width="400px"/>
-            <figcaption align="middle">Just splitting the sides of the torus creates less flexibility in points.</figcaption>
-          </td>
-      </tr>
-    </table>
-  </div>
+    </tr>
+  </table>
+</div>
+
 <br>
-<h3><p><i>"Can you pre-process the cube with flip and split so it subdivides symmetrically? Document these effects and explain why they occur, and how your pre-processing helps alleviate the effects."</i></p></h3>
-<p>In order to make the resulting upsampled cube symmetric, I hypothesised that the degree of the vertices mattered. I flipped the edges of the cube such as at
-   opposite ends, the vertices of the cube both have degree of 6. This also meant that every other vertex degree would be 4.</p>
+<h3>Comparing number of light rays</h3>
+
+<p>We use the CBspheres_lambertian.dae scene to render the images below with varying number of light rays from 
+  1, 4, 16 and 64, and keep the number of samples per pixel to 1. We can see having more light rays allow for less noisy pictures.
+</p>
 
 <div align="middle">
     <table style="width=100%">
       <tr>
         <td>
-          <img src="Images/Part6 StratFlip.gif" align="middle" width="600px"/>
-          <figcaption align="middle"><i>Setting opposite facing vertices to degree 6.<br> As a consequence, all other vertex degrees have to be 4.</i></figcaption>
+          <img src="images/Part3_spheres_ray1_samples1.png" align="middle" width="400px"/>
+          <figcaption align="middle">A single light ray.<br>1 light ray.</figcaption>
         </td>
-      </tr>
-    </table>
-  </div>
-
- <p>Upon upsampling, this created a hexagonal-esque pillow shape. My belief is that the original degrees are always conserved, but the points are moved slightly inward.
-   As such, like for the icosahedron, when upsampling, we see that there are always 12 vertices with a degree of 5 (from the original shape) that are preserved. So, in order to
-   get symmetric shape for the cube, we need the symmetric vertex degrees to be the same as well.
- </p>
-
- <div align="middle">
-    <table style="width=100%">
-      <tr>
         <td>
-          <img src="Images/Part6 Hexagon Pillow.gif" align="middle" width="600px"/>
-          <figcaption align="middle"><i>Symmetric shape yielded by symmetric vertex degrees.</i></figcaption>
-        </td>
+            <img src="images/Part3_spheres_ray4_samples1.png" align="middle" width="400px"/>
+            <figcaption align="middle">The light rays are multiplying!<br>4 light rays.</figcaption>
+          </td>
       </tr>
       <br>
       <tr>
-          <td>
-            <img src="Images/Part6 PreservedDegree.png" align="middle" width="600px"/>
-            <figcaption align="middle"><i>Zooming into one of the points on the shape, we see that the<br> degree 4 vertex is still preserved, circled in red.</i></figcaption>
+        <td>
+          <img src="images/Part3_spheres_ray16_samples1.png" align="middle" width="400px"/>
+          <figcaption align="middle">Wait, these aren't bunnies, why are there so many?<br>16 light rays.</figcaption>
+        </td>
+        <td>
+            <img src="images/Part3_spheres_ray64_samples1.png" align="middle" width="400px"/>
+            <figcaption align="middle">Oh, light rays are mathematical bunnies.<br> At least they aren't that noisy. 64 light rays.</figcaption>
           </td>
-        </tr>
+      </tr>
     </table>
   </div>
 
+<h2 align="middle">Part 4: Global Illumination</h2>
+
+<p>The indirect lighting function allows us to include bounced rays of light on shadowy areas. Previously, we
+  only looked at points that were in direct line of sight of the light sources. However, non-light sources also reflect light, 
+  and these reflected light rays can light up areas otherwise not in line of sight to light sources.
+  <br>
+  Implementation details:
+  <ul>
+    Using our importance and hemisphere lighting functions from part 3, we create a recursive function to simulate rays of light boucing around the scene.
+    <li>
+      In <i>zero_bounce_radiance</i>, we take only the emission of the object itself. For non-light sources, this will be zero.
+    </li>
+    <li> In <i>one_bounce_radiance</i>, we use our direct lighting function to return samples for objects that are directly in line of sight of the light sources.</li>
+   <li>In <i>raytrace_pixel</i>, we set the max depth of the ray to <i>max_ray_depth</i>. This allows us to limit the number of bounces the ray performs.</li>
+    <li>
+      In <i>at_least_one_bounce_radiance</i>, we perform the following steps recursively:
+      <ol>
+        <li>Calculate the hit point at which a ray hits an object.</li>
+        <li>Convert the incoming ray direction to an outgoing direction.</li>
+        <li>Get the radiance for one bounce of light at this point with <i>one_bounce_radiance</i> and get the intersection information.</li>
+        <li>Sample the bsdf of the current hit point, as well as the pdf and get a sample of the incoming ray on the intersection</li>
+        <li>If the max_ray_depth is 1 or 0, we can just return the radiance of one bounce.</li>
+        <li>Else, we probabilistically perform a bounce with 0.7 chance of bouncing. </li>
+        <li>Ensure that there is at least one bounce if we have <i>max_ray_depth</i> set to anything above 1 
+          by checking the current ray's depth. If it is equal to the <i></i>max_ray_depth</i>, we perform a bounce anyway
+        regardless of what the coinflip says.</li>
+        <li>Convert the incoming ray to world space.</li>
+        <li>Create a bounce ray in the direction of the incoming ray, and a ray depth of one less than the ray that was given as an argument.</li>
+        <li>Check if the ray intersects with an object in the scene with <i>bvh->intersect</i>.</li>
+        <li>If it does, we get the sample at that point by recursively calling <i>at_least_one_bounce_radiance</i>.</li>
+        <li>Weight this sample by the bsdf found, the cosine of the incoming ray and the pdf, as well as the probability of not terminating.</li>
+        <li>Add this to <i>L_out</i> and return it.</li>
+      </ol>
+    </li>
+  </ul>
+</p>
+
+<h3>Comparing only direct illumination versus only indirect illumination</h3>
 
 
+<div align="middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="images/Part4_bunny_1024_directonly.png" align="middle" width="400px"/>
+          <figcaption align="middle">A sad, dark bunny lit.<br>Lit by only direct lighting.</figcaption>
+        </td>
+        <td>
+            <img src="images/Part4_spheres_1024_directonly.png" align="middle" width="400px"/>
+            <figcaption align="middle">Even sadder, darker spheres.<br>Also only direct lighting.</figcaption>
+          </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="images/Part3_spheres_ray16_samples1.png" align="middle" width="400px"/>
+          <figcaption align="middle">Wait, these aren't bunnies, why are there so many?</figcaption>
+        </td>
+        <td>
+            <img src="images/Part3_spheres_ray64_samples1.png" align="middle" width="400px"/>
+            <figcaption align="middle">Oh, light rays are mathematical bunnies. At least they aren't that noisy.</figcaption>
+          </td>
+      </tr>
+    </table>
+  </div>
+<br><br>
 
-<h2 align="middle">Section III: Mesh Competition</h2>
-<p>If you are not participating in the optional mesh competition, don't worry about this section!</p>
+<h3>CBbunny.dae max ray depth comparison</h3>
 
-<h3 align="middle">Part 7: Design your own mesh!</h3>
+<div align="middle">
+    <table style="width=100">
+      <tr>
+        <td>
+          <img src="images/CBbunny_1024_m0.png" align="middle" width="400px"/>
+          <figcaption align="middle">Bunnies <i>AND</i> multiplying light rays?<br>Depth of 0.</figcaption>
+        </td>
+        <td>
+            <img src="images/CBbunny_1024_m1.png" align="middle" width="400px"/>
+            <figcaption align="middle">It's an epidemic!<br> Depth of 1.</figcaption>
+          </td>
+      </tr>
+      <br>
+      <tr>
+        <td>
+          <img src="images/CBbunny_1024_m2.png" align="middle" width="400px"/>
+          <figcaption align="middle">At least more light rays make the bunnies look better.<br>
+          Depth of 2.</figcaption>
+        </td>
+        <td>
+            <img src="images/CBbunny_1024_m3.png" align="middle" width="400px"/>
+            <figcaption align="middle">Oh, light rays are mathematical bunnies. At least <br>they aren't that noisy. Depth of 3.</figcaption>
+          </td>
+      </tr>
+      
+    </table>
+  </div>
+<div align="middle">
+    <tr>
+        <td>
+          <img src="images/CBbunny_1024_m100.png" align="middle" width="600px"/>
+          <figcaption align="middle">Now this bunny is <i>LIT</i>. <br>100 ray depth.</figcaption>
+        </td>
+      </tr>
+</div>
+  
 
+<h2 align="middle">Part 5: Adaptive Sampling</h2>
 
+<p></p>
 
 </body>
 </html>
